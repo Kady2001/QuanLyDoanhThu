@@ -1,0 +1,1477 @@
+{
+  "version": 58,
+  "updatedAt": "2026-05-17T06:16:00.959Z",
+  "state": {
+    "units": [
+      {
+        "name": "Keycap XDA trắng",
+        "cat": "keycap",
+        "variant": "",
+        "buy": 100,
+        "expectedSell": 100,
+        "arrived": "2026-04-15",
+        "note": "tháng 4",
+        "status": "in_stock",
+        "id": "imp_1778992642059_0",
+        "transactionCode": "NG-20260415-0001"
+      },
+      {
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 580,
+        "expectedSell": 650,
+        "arrived": "2026-04-15",
+        "note": "xong 4/5",
+        "status": "sold",
+        "sell": 650,
+        "sold": "2026-05-04",
+        "id": "imp_1778992642059_1",
+        "transactionCode": "NG-20260415-0002"
+      },
+      {
+        "name": "Mini60he pro",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 370,
+        "expectedSell": 430,
+        "arrived": "2026-04-15",
+        "note": "tháng 4(bán 8/5)",
+        "status": "sold",
+        "sell": 430,
+        "sold": "2026-05-08",
+        "id": "imp_1778992642059_2",
+        "transactionCode": "NG-20260415-0003"
+      },
+      {
+        "name": "Mini60he pro",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 370,
+        "expectedSell": 430,
+        "arrived": "2026-04-15",
+        "note": "tháng 4(8/5)",
+        "status": "sold",
+        "sell": 430,
+        "sold": "2026-05-08",
+        "id": "imp_1778992642059_3",
+        "transactionCode": "NG-20260415-0004"
+      },
+      {
+        "name": "keycap comic đỏ",
+        "cat": "keycap",
+        "variant": "",
+        "buy": 108,
+        "expectedSell": 108,
+        "arrived": "2026-04-15",
+        "note": "tháng 4",
+        "status": "in_stock",
+        "id": "imp_1778992642059_4",
+        "transactionCode": "NG-20260415-0005"
+      },
+      {
+        "name": "keycap comic đỏ",
+        "cat": "keycap",
+        "variant": "",
+        "buy": 108,
+        "expectedSell": 108,
+        "arrived": "2026-04-15",
+        "note": "tháng 4",
+        "status": "in_stock",
+        "id": "imp_1778992642059_5",
+        "transactionCode": "NG-20260415-0006"
+      },
+      {
+        "name": "Keycap XDA nâu",
+        "cat": "keycap",
+        "variant": "",
+        "buy": 100,
+        "expectedSell": 100,
+        "arrived": "2026-04-15",
+        "note": "tháng 4",
+        "status": "in_stock",
+        "id": "imp_1778992642059_6",
+        "transactionCode": "NG-20260415-0007"
+      },
+      {
+        "name": "Keycap XDA trắng",
+        "cat": "keycap",
+        "variant": "",
+        "buy": 100,
+        "expectedSell": 100,
+        "arrived": "2026-04-15",
+        "note": "tháng 4",
+        "status": "in_stock",
+        "id": "imp_1778992642059_7",
+        "transactionCode": "NG-20260415-0008"
+      },
+      {
+        "name": "Keycap XDA cafe",
+        "cat": "keycap",
+        "variant": "",
+        "buy": 100,
+        "expectedSell": 100,
+        "arrived": "2026-04-15",
+        "note": "tháng 4",
+        "status": "in_stock",
+        "id": "imp_1778992642059_8",
+        "transactionCode": "NG-20260415-0009"
+      },
+      {
+        "name": "Mini60he pro",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 350,
+        "expectedSell": 350,
+        "arrived": "2026-04-15",
+        "note": "tháng 4",
+        "status": "in_stock",
+        "id": "imp_1778992642059_9",
+        "transactionCode": "NG-20260415-0010"
+      },
+      {
+        "name": "f108pro mocha fr4",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 778,
+        "expectedSell": 950,
+        "arrived": "2026-04-15",
+        "note": "tháng 4, bán 8/5 bh 15d",
+        "status": "sold",
+        "sell": 950,
+        "sold": "2026-05-08",
+        "id": "imp_1778992642059_10",
+        "transactionCode": "NG-20260415-0011"
+      },
+      {
+        "name": "f108 pro mocha fr4",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 825,
+        "expectedSell": 980,
+        "arrived": "2026-04-15",
+        "note": "tháng 4, ban 5/5, da ship",
+        "status": "sold",
+        "sell": 980,
+        "sold": "2026-05-05",
+        "id": "imp_1778992642059_11",
+        "transactionCode": "NG-20260415-0012"
+      },
+      {
+        "name": "hi75c pro đen FR4",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 683,
+        "expectedSell": 850,
+        "arrived": "2026-04-15",
+        "note": "tháng 4, bán 12/5",
+        "status": "sold",
+        "sell": 850,
+        "sold": "2026-05-12",
+        "id": "imp_1778992642059_12",
+        "transactionCode": "NG-20260415-0013"
+      },
+      {
+        "name": "wukong k87 pro",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 486,
+        "expectedSell": 720,
+        "arrived": "2026-04-15",
+        "note": "tháng 4, bán 7/5",
+        "status": "sold",
+        "sell": 720,
+        "sold": "2026-05-07",
+        "id": "imp_1778992642059_13",
+        "transactionCode": "NG-20260415-0014"
+      },
+      {
+        "name": "Mini60he pro đen",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 338,
+        "expectedSell": 338,
+        "arrived": "2026-04-15",
+        "note": "tháng 4",
+        "status": "in_stock",
+        "id": "imp_1778992642059_14",
+        "transactionCode": "NG-20260415-0015"
+      },
+      {
+        "name": "keycap topo hồng 132",
+        "cat": "keycap",
+        "variant": "",
+        "buy": 60,
+        "expectedSell": 130,
+        "arrived": "2026-04-15",
+        "note": "tháng 4( ban 14/5)",
+        "status": "sold",
+        "sell": 130,
+        "sold": "2026-05-14",
+        "id": "imp_1778992642059_15",
+        "transactionCode": "NG-20260415-0016"
+      },
+      {
+        "name": "keycap topo tím",
+        "cat": "keycap",
+        "variant": "",
+        "buy": 80,
+        "expectedSell": 130,
+        "arrived": "2026-04-15",
+        "note": "bán 4/5",
+        "status": "sold",
+        "sell": 130,
+        "sold": "2026-05-04",
+        "id": "imp_1778992642059_16",
+        "transactionCode": "NG-20260415-0017"
+      },
+      {
+        "name": "keycap topo hồng đen",
+        "cat": "keycap",
+        "variant": "Mặc định",
+        "buy": 80,
+        "expectedSell": 130,
+        "arrived": "2026-04-15",
+        "note": "tháng 4",
+        "status": "sold",
+        "sell": 130,
+        "sold": "2026-05-01",
+        "id": "imp_1778992642059_17",
+        "transactionCode": "NG-20260415-0018",
+        "productLineId": "line-keycap-topo-hong-en",
+        "variantId": "variant-keycap-topo-hong-en-mac-inh"
+      },
+      {
+        "name": "keycap topo hồng 132",
+        "cat": "keycap",
+        "variant": "",
+        "buy": 60,
+        "expectedSell": 60,
+        "arrived": "2026-04-15",
+        "note": "tháng 4",
+        "status": "in_stock",
+        "id": "imp_1778992642059_18",
+        "transactionCode": "NG-20260415-0019"
+      },
+      {
+        "name": "keycap hồng xuyên led",
+        "cat": "keycap",
+        "variant": "",
+        "buy": 60,
+        "expectedSell": 60,
+        "arrived": "2026-04-15",
+        "note": "tháng 4",
+        "status": "in_stock",
+        "id": "imp_1778992642059_19",
+        "transactionCode": "NG-20260415-0020"
+      },
+      {
+        "name": "Nova 75 pro fr4",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 776,
+        "expectedSell": 850,
+        "arrived": "2026-05-01",
+        "note": "bán 12/5",
+        "status": "sold",
+        "sell": 850,
+        "sold": "2026-05-12",
+        "id": "imp_1778992642059_20",
+        "transactionCode": "NG-20260501-0001"
+      },
+      {
+        "name": "Hero68",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 564,
+        "expectedSell": 580,
+        "arrived": "2026-05-03",
+        "note": "bán 04/05/2026",
+        "status": "sold",
+        "sell": 580,
+        "sold": "2026-05-04",
+        "id": "imp_1778992642059_21",
+        "transactionCode": "NG-20260503-0001"
+      },
+      {
+        "name": "keycap xuyên led hồng",
+        "cat": "keycap",
+        "variant": "",
+        "buy": 80,
+        "expectedSell": 80,
+        "arrived": "2026-05-01",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_22",
+        "transactionCode": "NG-20260501-0002"
+      },
+      {
+        "name": "Hero68",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 544,
+        "expectedSell": 550,
+        "arrived": "2026-05-01",
+        "note": "bán 14/5",
+        "status": "sold",
+        "sell": 550,
+        "sold": "2026-05-14",
+        "id": "imp_1778992642059_23",
+        "transactionCode": "NG-20260501-0003"
+      },
+      {
+        "name": "keycap xuyên led",
+        "cat": "keycap",
+        "variant": "",
+        "buy": 80,
+        "expectedSell": 80,
+        "arrived": "2026-05-01",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_24",
+        "transactionCode": "NG-20260501-0004"
+      },
+      {
+        "name": "Mini60he pro",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 360,
+        "expectedSell": 360,
+        "arrived": "2026-05-03",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_25",
+        "transactionCode": "NG-20260503-0002"
+      },
+      {
+        "name": "Màn 15.6in fullhd",
+        "cat": "monitor",
+        "variant": "",
+        "buy": 696,
+        "expectedSell": 1000,
+        "arrived": "2026-05-03",
+        "note": "bán 5/5",
+        "status": "sold",
+        "sell": 1000,
+        "sold": "2026-05-05",
+        "id": "imp_1778992642059_26",
+        "transactionCode": "NG-20260503-0003"
+      },
+      {
+        "name": "Màn 15.6in fullhd",
+        "cat": "monitor",
+        "variant": "",
+        "buy": 716,
+        "expectedSell": 1000,
+        "arrived": "2026-05-05",
+        "note": "bán 5/5",
+        "status": "sold",
+        "sell": 1000,
+        "sold": "2026-05-05",
+        "id": "imp_1778992642059_27",
+        "transactionCode": "NG-20260505-0001"
+      },
+      {
+        "name": "Màn 15.6in fullhd",
+        "cat": "monitor",
+        "variant": "",
+        "buy": 697,
+        "expectedSell": 1100,
+        "arrived": "2026-05-03",
+        "note": "bán 6/5",
+        "status": "sold",
+        "sell": 1100,
+        "sold": "2026-05-06",
+        "id": "imp_1778992642059_28",
+        "transactionCode": "NG-20260503-0004"
+      },
+      {
+        "name": "Màn 15.6in fullhd",
+        "cat": "monitor",
+        "variant": "",
+        "buy": 700,
+        "expectedSell": 1050,
+        "arrived": "2026-05-03",
+        "note": "bán 7/5",
+        "status": "sold",
+        "sell": 1050,
+        "sold": "2026-05-07",
+        "id": "imp_1778992642059_29",
+        "transactionCode": "NG-20260503-0005"
+      },
+      {
+        "name": "Màn 16in",
+        "cat": "monitor",
+        "variant": "",
+        "buy": 794,
+        "expectedSell": 1150,
+        "arrived": "2026-05-03",
+        "note": "acc Duyen(bán 7/5)",
+        "status": "sold",
+        "sell": 1150,
+        "sold": "2026-05-07",
+        "id": "imp_1778992642059_30",
+        "transactionCode": "NG-20260503-0006"
+      },
+      {
+        "name": "Màn 16in",
+        "cat": "monitor",
+        "variant": "",
+        "buy": 869,
+        "expectedSell": 1150,
+        "arrived": "2026-05-03",
+        "note": "acc Phong per2(bán 7/5)",
+        "status": "sold",
+        "sell": 1150,
+        "sold": "2026-05-07",
+        "id": "imp_1778992642059_31",
+        "transactionCode": "NG-20260503-0007"
+      },
+      {
+        "name": "Màn 16in",
+        "cat": "monitor",
+        "variant": "",
+        "buy": 765,
+        "expectedSell": 1150,
+        "arrived": "2026-05-05",
+        "note": "acc Long(bán 7/5)",
+        "status": "sold",
+        "sell": 1150,
+        "sold": "2026-05-07",
+        "id": "imp_1778992642059_32",
+        "transactionCode": "NG-20260505-0002"
+      },
+      {
+        "name": "Màn 15.6 cảm ứng",
+        "cat": "monitor",
+        "variant": "",
+        "buy": 1160,
+        "expectedSell": 1280,
+        "arrived": "2026-05-05",
+        "note": "bán 7/5",
+        "status": "sold",
+        "sell": 1280,
+        "sold": "2026-05-07",
+        "id": "imp_1778992642059_33",
+        "transactionCode": "NG-20260505-0003"
+      },
+      {
+        "name": "Hero68",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 487,
+        "expectedSell": 550,
+        "arrived": "2026-05-04",
+        "note": "bán 14/5",
+        "status": "sold",
+        "sell": 550,
+        "sold": "2026-05-14",
+        "id": "imp_1778992642059_34",
+        "transactionCode": "NG-20260504-0001"
+      },
+      {
+        "name": "Hero68",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 487,
+        "expectedSell": 550,
+        "arrived": "2026-05-03",
+        "note": "bán 14/5",
+        "status": "sold",
+        "sell": 550,
+        "sold": "2026-05-14",
+        "id": "imp_1778992642059_35",
+        "transactionCode": "NG-20260503-0008"
+      },
+      {
+        "name": "Hero68",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 516,
+        "expectedSell": 550,
+        "arrived": "2026-05-03",
+        "note": "Acc Đức(bán 14/5)",
+        "status": "sold",
+        "sell": 550,
+        "sold": "2026-05-14",
+        "id": "imp_1778992642059_36",
+        "transactionCode": "NG-20260503-0009"
+      },
+      {
+        "name": "Hero68",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 517,
+        "expectedSell": 550,
+        "arrived": "2026-05-03",
+        "note": "bán 14/5",
+        "status": "sold",
+        "sell": 550,
+        "sold": "2026-05-14",
+        "id": "imp_1778992642059_37",
+        "transactionCode": "NG-20260503-0010"
+      },
+      {
+        "name": "Hero68",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 516,
+        "expectedSell": 550,
+        "arrived": "2026-05-03",
+        "note": "Acc Đức(bán 14/5)",
+        "status": "sold",
+        "sell": 550,
+        "sold": "2026-05-14",
+        "id": "imp_1778992642059_38",
+        "transactionCode": "NG-20260503-0011"
+      },
+      {
+        "name": "Hero68",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 501,
+        "expectedSell": 501,
+        "arrived": "2026-05-04",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_39",
+        "transactionCode": "NG-20260504-0002"
+      },
+      {
+        "name": "Xingmeng X98U silent",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 600,
+        "expectedSell": 600,
+        "arrived": "2026-05-01",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_40",
+        "transactionCode": "NG-20260501-0005"
+      },
+      {
+        "name": "Xingmeng X98U",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 580,
+        "expectedSell": 580,
+        "arrived": "2026-05-01",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_41",
+        "transactionCode": "NG-20260501-0006"
+      },
+      {
+        "name": "Xingmeng X98U",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 574,
+        "expectedSell": 574,
+        "arrived": "2026-05-01",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_42",
+        "transactionCode": "NG-20260501-0007"
+      },
+      {
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 550,
+        "expectedSell": 650,
+        "arrived": "2026-05-03",
+        "note": "bán 6/5",
+        "status": "sold",
+        "sell": 650,
+        "sold": "2026-05-06",
+        "id": "imp_1778992642059_43",
+        "transactionCode": "NG-20260503-0012"
+      },
+      {
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 640,
+        "expectedSell": 650,
+        "arrived": "2026-05-03",
+        "note": "bán 8/5",
+        "status": "sold",
+        "sell": 650,
+        "sold": "2026-05-08",
+        "id": "imp_1778992642059_44",
+        "transactionCode": "NG-20260503-0013"
+      },
+      {
+        "name": "F75 trắng xanh",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 648,
+        "expectedSell": 650,
+        "arrived": "2026-05-03",
+        "note": "11/5 ship",
+        "status": "sold",
+        "sell": 650,
+        "sold": "2026-05-11",
+        "id": "imp_1778992642059_45",
+        "transactionCode": "NG-20260503-0014"
+      },
+      {
+        "name": "F75 + keycap",
+        "cat": "keycap",
+        "variant": "",
+        "buy": 586,
+        "expectedSell": 650,
+        "arrived": "2026-05-03",
+        "note": "bán 16/5",
+        "status": "sold",
+        "sell": 650,
+        "sold": "2026-05-16",
+        "id": "imp_1778992642059_46",
+        "transactionCode": "NG-20260503-0015"
+      },
+      {
+        "name": "Keycap topo xám",
+        "cat": "keycap",
+        "variant": "",
+        "buy": 80,
+        "expectedSell": 80,
+        "arrived": "2026-05-03",
+        "note": "đợt hoàn hàng",
+        "status": "sold",
+        "sell": 80,
+        "sold": "2026-05-05",
+        "id": "imp_1778992642059_47",
+        "transactionCode": "NG-20260503-0016"
+      },
+      {
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 640,
+        "expectedSell": 640,
+        "arrived": "2026-05-03",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_48",
+        "transactionCode": "NG-20260503-0017"
+      },
+      {
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 639,
+        "expectedSell": 639,
+        "arrived": "2026-05-04",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_49",
+        "transactionCode": "NG-20260504-0003"
+      },
+      {
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 622,
+        "expectedSell": 622,
+        "arrived": "2026-05-05",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_50",
+        "transactionCode": "NG-20260505-0004"
+      },
+      {
+        "name": "Langtu T98 red sw",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 418,
+        "expectedSell": 600,
+        "arrived": "2026-05-03",
+        "note": "ship cod ngày 10/5",
+        "status": "sold",
+        "sell": 600,
+        "sold": "2026-05-10",
+        "id": "imp_1778992642059_51",
+        "transactionCode": "NG-20260503-0018"
+      },
+      {
+        "name": "Langtu T98 red sw",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 420,
+        "expectedSell": 580,
+        "arrived": "2026-05-03",
+        "note": "bán 16/5",
+        "status": "sold",
+        "sell": 580,
+        "sold": "2026-05-16",
+        "id": "imp_1778992642059_52",
+        "transactionCode": "NG-20260503-0019"
+      },
+      {
+        "name": "Langtu T88 8k",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 415,
+        "expectedSell": 415,
+        "arrived": "2026-05-03",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_53",
+        "transactionCode": "NG-20260503-0020"
+      },
+      {
+        "name": "LangTu Boom68",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 495,
+        "expectedSell": 495,
+        "arrived": "2026-05-03",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_54",
+        "transactionCode": "NG-20260503-0021"
+      },
+      {
+        "name": "polar xám",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 80,
+        "expectedSell": 81,
+        "arrived": "2026-05-03",
+        "note": "",
+        "status": "sold",
+        "sell": 81,
+        "sold": "2026-05-05",
+        "id": "imp_1778992642059_55",
+        "transactionCode": "NG-20260503-0022"
+      },
+      {
+        "name": "win68 đen",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 294,
+        "expectedSell": 390,
+        "arrived": "2026-05-03",
+        "note": "ship cod ngày 13/5",
+        "status": "sold",
+        "sell": 390,
+        "sold": "2026-05-13",
+        "id": "imp_1778992642059_56",
+        "transactionCode": "NG-20260503-0023"
+      },
+      {
+        "name": "Win68",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 278,
+        "expectedSell": 390,
+        "arrived": "2026-05-03",
+        "note": "ship cod ngày 5/5(xong)",
+        "status": "sold",
+        "sell": 390,
+        "sold": "2026-05-05",
+        "id": "imp_1778992642059_57",
+        "transactionCode": "NG-20260503-0024"
+      },
+      {
+        "name": "win68",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 276,
+        "expectedSell": 370,
+        "arrived": "2026-05-06",
+        "note": "ship cod xong",
+        "status": "sold",
+        "sell": 370,
+        "sold": "2026-05-08",
+        "id": "imp_1778992642059_58",
+        "transactionCode": "NG-20260506-0001"
+      },
+      {
+        "name": "Hero68",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 516,
+        "expectedSell": 516,
+        "arrived": "2026-05-05",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_59",
+        "transactionCode": "NG-20260505-0005"
+      },
+      {
+        "name": "Hero68",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 517,
+        "expectedSell": 517,
+        "arrived": "2026-05-05",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_60",
+        "transactionCode": "NG-20260505-0006"
+      },
+      {
+        "name": "màn 14 in",
+        "cat": "monitor",
+        "variant": "",
+        "buy": 775,
+        "expectedSell": 865,
+        "arrived": "2026-05-08",
+        "note": "bán 9/5",
+        "status": "sold",
+        "sell": 865,
+        "sold": "2026-05-09",
+        "id": "imp_1778992642059_61",
+        "transactionCode": "NG-20260508-0001"
+      },
+      {
+        "name": "Hero68",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 516,
+        "expectedSell": 516,
+        "arrived": "2026-05-06",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_62",
+        "transactionCode": "NG-20260506-0002"
+      },
+      {
+        "name": "Màn15.6",
+        "cat": "monitor",
+        "variant": "",
+        "buy": 767,
+        "expectedSell": 767,
+        "arrived": "2026-05-09",
+        "note": "hoàn",
+        "status": "sold",
+        "sell": 767,
+        "sold": "2026-05-11",
+        "id": "imp_1778992642059_63",
+        "transactionCode": "NG-20260509-0001"
+      },
+      {
+        "name": "F75 xanh mây",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 541,
+        "expectedSell": 541,
+        "arrived": "2026-05-09",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_64",
+        "transactionCode": "NG-20260509-0002"
+      },
+      {
+        "name": "F75 trắng xanh",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 547,
+        "expectedSell": 547,
+        "arrived": "2026-05-09",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_65",
+        "transactionCode": "NG-20260509-0003"
+      },
+      {
+        "name": "Keycap topo xanh dương",
+        "cat": "keycap",
+        "variant": "",
+        "buy": 80,
+        "expectedSell": 80,
+        "arrived": "2026-05-09",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_66",
+        "transactionCode": "NG-20260509-0004"
+      },
+      {
+        "name": "win60he đen",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 252,
+        "expectedSell": 252,
+        "arrived": "2026-05-09",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_67",
+        "transactionCode": "NG-20260509-0005"
+      },
+      {
+        "name": "win68he đen",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 280,
+        "expectedSell": 280,
+        "arrived": "2026-05-09",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_68",
+        "transactionCode": "NG-20260509-0006"
+      },
+      {
+        "name": "keycap trong suốt x5",
+        "cat": "keycap",
+        "variant": "",
+        "buy": 600,
+        "expectedSell": 600,
+        "arrived": "2026-05-01",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_69",
+        "transactionCode": "NG-20260501-0008"
+      },
+      {
+        "name": "Màn 14in",
+        "cat": "monitor",
+        "variant": "",
+        "buy": 657,
+        "expectedSell": 850,
+        "arrived": "2026-05-10",
+        "note": "acc nguyen long(bán 12/5)",
+        "status": "sold",
+        "sell": 850,
+        "sold": "2026-05-12",
+        "id": "imp_1778992642059_70",
+        "transactionCode": "NG-20260510-0001"
+      },
+      {
+        "name": "win68 trắng",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 286,
+        "expectedSell": 287,
+        "arrived": "2026-05-10",
+        "note": "",
+        "status": "sold",
+        "sell": 287,
+        "sold": "2026-05-12",
+        "id": "imp_1778992642059_71",
+        "transactionCode": "NG-20260510-0002"
+      },
+      {
+        "name": "Nova 75 base",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 642,
+        "expectedSell": 700,
+        "arrived": "2026-05-10",
+        "note": "acc long(bán 14/5)",
+        "status": "sold",
+        "sell": 700,
+        "sold": "2026-05-14",
+        "id": "imp_1778992642059_72",
+        "transactionCode": "NG-20260510-0003"
+      },
+      {
+        "name": "Nova 75 pro",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 645,
+        "expectedSell": 780,
+        "arrived": "2026-05-10",
+        "note": "acc long(bán 14/5- đang cod)",
+        "status": "sold",
+        "sell": 780,
+        "sold": "2026-05-14",
+        "id": "imp_1778992642059_73",
+        "transactionCode": "NG-20260510-0004"
+      },
+      {
+        "name": "Nova 75 pro",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 690,
+        "expectedSell": 760,
+        "arrived": "2026-05-10",
+        "note": "acc Duyen, bán cod 13/5",
+        "status": "sold",
+        "sell": 760,
+        "sold": "2026-05-13",
+        "id": "imp_1778992642059_74",
+        "transactionCode": "NG-20260510-0005"
+      },
+      {
+        "name": "Nova 75 base",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 642,
+        "expectedSell": 700,
+        "arrived": "2026-05-10",
+        "note": "acc aff(bán 14/5)",
+        "status": "sold",
+        "sell": 700,
+        "sold": "2026-05-14",
+        "id": "imp_1778992642059_75",
+        "transactionCode": "NG-20260510-0006"
+      },
+      {
+        "name": "Win60he max",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 381,
+        "expectedSell": 381,
+        "arrived": "2026-05-10",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_76",
+        "transactionCode": "NG-20260510-0007"
+      },
+      {
+        "name": "Nova 75 base",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 689,
+        "expectedSell": 689,
+        "arrived": "2026-05-12",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_77",
+        "transactionCode": "NG-20260512-0001"
+      },
+      {
+        "name": "Nova 75 max hồng",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 885,
+        "expectedSell": 950,
+        "arrived": "2026-05-12",
+        "note": "bán 13/5",
+        "status": "sold",
+        "sell": 950,
+        "sold": "2026-05-13",
+        "id": "imp_1778992642059_78",
+        "transactionCode": "NG-20260512-0002"
+      },
+      {
+        "name": "Nova 75 max hồng",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 881,
+        "expectedSell": 950,
+        "arrived": "2026-05-12",
+        "note": "bán 14/5",
+        "status": "sold",
+        "sell": 950,
+        "sold": "2026-05-14",
+        "id": "imp_1778992642059_79",
+        "transactionCode": "NG-20260512-0003"
+      },
+      {
+        "name": "Vgn neon 68",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 667,
+        "expectedSell": 667,
+        "arrived": "2026-05-12",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_80",
+        "transactionCode": "NG-20260512-0004"
+      },
+      {
+        "name": "Màn 14in Fhd (kèm bao da)",
+        "cat": "monitor",
+        "variant": "",
+        "buy": 722,
+        "expectedSell": 880,
+        "arrived": "2026-05-13",
+        "note": "bán 13/5",
+        "status": "sold",
+        "sell": 880,
+        "sold": "2026-05-13",
+        "id": "imp_1778992642059_81",
+        "transactionCode": "NG-20260513-0001"
+      },
+      {
+        "name": "Màn 14in Fhd",
+        "cat": "monitor",
+        "variant": "",
+        "buy": 716,
+        "expectedSell": 716,
+        "arrived": "2026-05-13",
+        "note": "hoàn",
+        "status": "sold",
+        "sell": 716,
+        "sold": "2026-05-15",
+        "id": "imp_1778992642059_82",
+        "transactionCode": "NG-20260513-0002"
+      },
+      {
+        "name": "màn 14 + bao ba",
+        "cat": "monitor",
+        "variant": "",
+        "buy": 715,
+        "expectedSell": 900,
+        "arrived": "2026-05-14",
+        "note": "bán 14/5",
+        "status": "sold",
+        "sell": 900,
+        "sold": "2026-05-14",
+        "id": "imp_1778992642059_83",
+        "transactionCode": "NG-20260514-0001"
+      },
+      {
+        "name": "màn 14 + bao ba",
+        "cat": "monitor",
+        "variant": "",
+        "buy": 715,
+        "expectedSell": 900,
+        "arrived": "2026-05-14",
+        "note": "bán 15/5",
+        "status": "sold",
+        "sell": 900,
+        "sold": "2026-05-15",
+        "id": "imp_1778992642059_84",
+        "transactionCode": "NG-20260514-0002"
+      },
+      {
+        "name": "f75 xanh trắng",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 619,
+        "expectedSell": 619,
+        "arrived": "2026-05-15",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_85",
+        "transactionCode": "NG-20260515-0001"
+      },
+      {
+        "name": "màn 16 in ( hãng khác)",
+        "cat": "monitor",
+        "variant": "",
+        "buy": 720,
+        "expectedSell": 720,
+        "arrived": "2026-05-15",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_86",
+        "transactionCode": "NG-20260515-0002"
+      },
+      {
+        "name": "màn 16 in ( hãng khác)",
+        "cat": "monitor",
+        "variant": "",
+        "buy": 740,
+        "expectedSell": 740,
+        "arrived": "2026-05-15",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_87",
+        "transactionCode": "NG-20260515-0003"
+      },
+      {
+        "name": "s75 pro đen hồng",
+        "cat": "keyboard",
+        "variant": "",
+        "buy": 595,
+        "expectedSell": 595,
+        "arrived": "2026-05-15",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_88",
+        "transactionCode": "NG-20260515-0004"
+      },
+      {
+        "name": "Màn14in cảm ứng",
+        "cat": "monitor",
+        "variant": "",
+        "buy": 1400,
+        "expectedSell": 1400,
+        "arrived": "2026-05-16",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_89",
+        "transactionCode": "NG-20260516-0001"
+      },
+      {
+        "name": "Màn 16in 100% srgb",
+        "cat": "monitor",
+        "variant": "",
+        "buy": 1120,
+        "expectedSell": 1120,
+        "arrived": "2026-05-16",
+        "note": "",
+        "status": "in_stock",
+        "id": "imp_1778992642059_90",
+        "transactionCode": "NG-20260516-0002"
+      }
+    ],
+    "productLines": [
+      {
+        "id": "aula-f75",
+        "cat": "keyboard",
+        "brand": "AULA",
+        "name": "AULA F75",
+        "variants": [
+          {
+            "id": "aula-f75-white-blue-reaper",
+            "name": "Trắng xanh · Switch Leobog Reaper",
+            "color": "Trắng xanh",
+            "switch": "Leobog Reaper"
+          },
+          {
+            "id": "aula-f75-black-ice-vein",
+            "name": "Đen · Switch Ice Vein",
+            "color": "Đen",
+            "switch": "Ice Vein"
+          },
+          {
+            "id": "aula-f75-pink-crescent",
+            "name": "Hồng · Switch Crescent",
+            "color": "Hồng",
+            "switch": "Crescent"
+          }
+        ]
+      },
+      {
+        "id": "mini60he-pro",
+        "cat": "keyboard",
+        "brand": "Mini",
+        "name": "Mini60he Pro",
+        "variants": [
+          {
+            "id": "mini60he-pro-black-fr4",
+            "name": "Đen FR4",
+            "color": "Đen",
+            "plate": "FR4"
+          },
+          {
+            "id": "mini60he-pro-white-fr4",
+            "name": "Trắng FR4",
+            "color": "Trắng",
+            "plate": "FR4"
+          },
+          {
+            "id": "mini60he-pro-pink-le",
+            "name": "Hồng LE",
+            "color": "Hồng",
+            "edition": "LE"
+          }
+        ]
+      },
+      {
+        "id": "keycap-xda",
+        "cat": "keycap",
+        "brand": "XDA",
+        "name": "Keycap XDA",
+        "variants": [
+          {
+            "id": "keycap-xda-white-132",
+            "name": "Trắng · 132 keys",
+            "color": "Trắng",
+            "layout": "132 keys"
+          },
+          {
+            "id": "keycap-xda-brown-132",
+            "name": "Nâu · 132 keys",
+            "color": "Nâu",
+            "layout": "132 keys"
+          },
+          {
+            "id": "keycap-xda-cafe-132",
+            "name": "Cafe · 132 keys",
+            "color": "Cafe",
+            "layout": "132 keys"
+          }
+        ]
+      },
+      {
+        "id": "iphone-15-pro",
+        "cat": "phone",
+        "brand": "Apple",
+        "name": "iPhone 15 Pro",
+        "variants": [
+          {
+            "id": "iphone-15-pro-256-black",
+            "name": "256GB Titan Đen",
+            "storage": "256GB",
+            "color": "Titan Đen"
+          },
+          {
+            "id": "iphone-15-pro-256-white",
+            "name": "256GB Titan Trắng",
+            "storage": "256GB",
+            "color": "Titan Trắng"
+          },
+          {
+            "id": "iphone-15-pro-512-blue",
+            "name": "512GB Titan Xanh",
+            "storage": "512GB",
+            "color": "Titan Xanh"
+          }
+        ]
+      },
+      {
+        "id": "g-pro-x-superlight",
+        "cat": "mouse",
+        "brand": "Logitech",
+        "name": "Logitech G Pro X Superlight",
+        "variants": [
+          {
+            "id": "g-pro-x-superlight-black",
+            "name": "Đen",
+            "color": "Đen"
+          },
+          {
+            "id": "g-pro-x-superlight-white",
+            "name": "Trắng",
+            "color": "Trắng"
+          }
+        ]
+      },
+      {
+        "id": "anker-65w-gan",
+        "cat": "cable",
+        "brand": "Anker",
+        "name": "Sạc Anker 65W GaN",
+        "variants": [
+          {
+            "id": "anker-65w-gan-black",
+            "name": "Đen",
+            "color": "Đen"
+          },
+          {
+            "id": "anker-65w-gan-white",
+            "name": "Trắng",
+            "color": "Trắng"
+          }
+        ]
+      },
+      {
+        "id": "lg-ultragear-27gp850",
+        "cat": "monitor",
+        "brand": "LG",
+        "name": "LG UltraGear 27GP850",
+        "variants": [
+          {
+            "id": "lg-ultragear-27gp850-2k-165",
+            "name": "27\" · 2K · IPS · 165Hz",
+            "size": "27\"",
+            "resolution": "2K",
+            "panel": "IPS",
+            "refreshRate": "165Hz"
+          },
+          {
+            "id": "lg-ultragear-27gp850-2k-180",
+            "name": "27\" · 2K · IPS · 180Hz OC",
+            "size": "27\"",
+            "resolution": "2K",
+            "panel": "IPS",
+            "refreshRate": "180Hz OC"
+          }
+        ]
+      },
+      {
+        "id": "aoc-q27g3xmn",
+        "cat": "monitor",
+        "brand": "AOC",
+        "name": "AOC Q27G3XMN",
+        "variants": [
+          {
+            "id": "aoc-q27g3xmn-2k-mini-led-180",
+            "name": "27\" · 2K · Mini LED · 180Hz",
+            "size": "27\"",
+            "resolution": "2K",
+            "panel": "Mini LED",
+            "refreshRate": "180Hz"
+          }
+        ]
+      },
+      {
+        "id": "dell-p2723qe",
+        "cat": "monitor",
+        "brand": "Dell",
+        "name": "Dell P2723QE",
+        "variants": [
+          {
+            "id": "dell-p2723qe-4k-usbc-60",
+            "name": "27\" · 4K · IPS · USB-C · 60Hz",
+            "size": "27\"",
+            "resolution": "4K",
+            "panel": "IPS",
+            "refreshRate": "60Hz"
+          }
+        ]
+      },
+      {
+        "id": "artisan-hien",
+        "cat": "accessory",
+        "brand": "Artisan",
+        "name": "Lót chuột Artisan Hien",
+        "variants": [
+          {
+            "id": "artisan-hien-xl",
+            "name": "XL",
+            "size": "XL"
+          },
+          {
+            "id": "artisan-hien-l",
+            "name": "L",
+            "size": "L"
+          }
+        ]
+      }
+    ],
+    "categories": [
+      {
+        "id": "keyboard",
+        "name": "Bàn phím",
+        "color": "#ff6a3d"
+      },
+      {
+        "id": "keycap",
+        "name": "Keycap",
+        "color": "#f59e0b"
+      },
+      {
+        "id": "phone",
+        "name": "Điện thoại",
+        "color": "#2563eb"
+      },
+      {
+        "id": "mouse",
+        "name": "Chuột",
+        "color": "#059669"
+      },
+      {
+        "id": "cable",
+        "name": "Sạc & Cáp",
+        "color": "#7c3aed"
+      },
+      {
+        "id": "monitor",
+        "name": "Màn hình",
+        "color": "#0f766e"
+      },
+      {
+        "id": "accessory",
+        "name": "Phụ kiện",
+        "color": "#db2777"
+      }
+    ],
+    "affiliateIncomes": [
+      {
+        "id": "aff_1778997943626_9nejx9",
+        "amount": 2077,
+        "receivedAt": "2026-05-17",
+        "status": "pending",
+        "note": ""
+      },
+      {
+        "id": "aff_1778997935764_4ikzbm",
+        "amount": 366,
+        "receivedAt": "2026-05-17",
+        "status": "pending",
+        "note": ""
+      }
+    ],
+    "dashboardSettings": {
+      "includePendingAffiliateInProfit": false
+    },
+    "snapshots": []
+  }
+}

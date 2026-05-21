@@ -25,6 +25,7 @@ function Inventory({
   const [sellingUnit, setSellingUnit] = useStateI(null);
   const [editingUnit, setEditingUnit] = useStateI(null);
   const [selectedStructureCategoryId, setSelectedStructureCategoryId] = useStateI(null);
+  const [lastAddedSelection, setLastAddedSelection] = useStateI(null);
 
   const filtered = useMemoI(() => {
     let r = inStock.filter(p => {
@@ -60,6 +61,11 @@ function Inventory({
     inStock.forEach(p => { m[p.cat] = (m[p.cat] || 0) + 1; });
     return m;
   }, [inStock]);
+  const usedCategoryIds = useMemoI(() => new Set(units.map(unit => unit.cat)), [units]);
+  const visibleCategories = useMemoI(
+    () => window.CATEGORIES.filter(category => usedCategoryIds.has(category.id)),
+    [usedCategoryIds]
+  );
 
   // Inventory composition: quantity + capital by category.
   const categoryStructure = useMemoI(() => {
@@ -189,7 +195,7 @@ function Inventory({
         <button className={`chip ${cat === 'all' ? 'active' : ''}`} onClick={() => setCat('all')}>
           TẤT CẢ <span className="chip-count">{catCounts.all || 0}</span>
         </button>
-        {window.CATEGORIES.map(c => (
+        {visibleCategories.map(c => (
           <button key={c.id} className={`chip ${cat === c.id ? 'active' : ''}`} onClick={() => setCat(c.id)}>
             <i style={{ width: 7, height: 7, background: c.color, display: 'inline-block' }}></i>
             {c.name.toUpperCase()} <span className="chip-count">{catCounts[c.id] || 0}</span>
@@ -368,8 +374,15 @@ function Inventory({
         <AddProductModal
           catalogLines={catalogLines}
           today={today}
+          initialSelection={lastAddedSelection}
+          onCreateLine={onCreateLine}
+          onCreateVariant={onCreateVariant}
           onClose={() => setShowAdd(false)}
-          onSave={(p) => { addUnit(p); setShowAdd(false); }}
+          onSave={(p) => {
+            addUnit(p);
+            setLastAddedSelection({ productLineId: p.productLineId, variantId: p.variantId });
+            setShowAdd(false);
+          }}
         />
       )}
       {sellingUnit && (
@@ -541,7 +554,17 @@ function SellModal({ unit, today, onClose, onConfirm }) {
           <div className="field-row">
             <div className="field">
               <label>Giá bán thực tế (nghìn)</label>
-              <input type="number" value={sellPrice} onChange={e => setSellPrice(e.target.value)} autoFocus />
+              <input
+                type="number"
+                value={sellPrice}
+                onChange={e => setSellPrice(e.target.value)}
+                onKeyDown={e => {
+                  // Keep Backspace inside the price field; some browsers/webviews
+                  // otherwise treat it as a page-back action and dismiss the modal.
+                  if (e.key === 'Backspace') e.stopPropagation();
+                }}
+                autoFocus
+              />
             </div>
             <div className="field">
               <label>Ngày bán</label>
@@ -580,22 +603,127 @@ function SellModal({ unit, today, onClose, onConfirm }) {
   );
 }
 
-function AddProductModal({ catalogLines, today, onClose, onSave }) {
-  const firstLine = catalogLines[0];
-  const firstVariant = firstLine?.variants?.[0];
+function normalizePriceExpression(value) {
+  return String(value || '')
+    .replace(/\s+/g, '')
+    .replace(/,/g, '.');
+}
+
+function evaluatePriceExpression(value) {
+  const normalized = normalizePriceExpression(value);
+  if (!normalized) return null;
+  if (!/^[0-9.+\-*/()]+$/.test(normalized)) return null;
+  try {
+    const result = Function(`"use strict"; return (${normalized});`)();
+    return Number.isFinite(result) && result >= 0 ? result : null;
+  } catch {
+    return null;
+  }
+}
+
+function settlePriceInput(value) {
+  const result = evaluatePriceExpression(value);
+  return result === null ? normalizePriceExpression(value) : String(result);
+}
+
+function SearchableSelect({ value, selectedLabel, placeholder, searchValue, onSearch, options, onSelect, open, onOpen, onClose, emptyText }) {
+  const selected = options.find(option => option.value === value) || (selectedLabel ? { label: selectedLabel } : null);
+  return (
+    <div
+      className="search-select"
+      onBlur={e => {
+        if (!e.currentTarget.contains(e.relatedTarget)) onClose();
+      }}
+    >
+      <button
+        type="button"
+        className={`search-select-trigger ${open ? 'open' : ''}`}
+        onClick={() => open ? onClose() : onOpen()}
+        onKeyDown={e => {
+          if (e.key === 'Escape') onClose();
+        }}
+      >
+        <span>{selected?.label || placeholder}</span>
+        <span className="chev">⌄</span>
+      </button>
+      {open && (
+        <div className="search-select-pop">
+          <input
+            type="text"
+            value={searchValue}
+            onChange={e => onSearch(e.target.value)}
+            placeholder={placeholder}
+            onKeyDown={e => {
+              if (e.key === 'Escape') onClose();
+            }}
+            autoFocus
+          />
+          <div className="search-select-list">
+            {options.length > 0 ? options.map(option => (
+              <button
+                key={option.value}
+                type="button"
+                className={`search-select-item ${option.value === value ? 'selected' : ''}`}
+                onClick={() => {
+                  onSelect(option.value);
+                  onClose();
+                }}
+              >
+                <span>{option.label}</span>
+                {option.meta && <small>{option.meta}</small>}
+              </button>
+            )) : (
+              <div className="search-select-empty">{emptyText}</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AddProductModal({ catalogLines, today, initialSelection, onCreateLine, onCreateVariant, onClose, onSave }) {
+  const preferredLine = catalogLines.find(line => line.id === initialSelection?.productLineId);
+  const firstLine = preferredLine || catalogLines[0];
+  const preferredVariant = firstLine?.variants?.find(variant => variant.id === initialSelection?.variantId);
+  const firstVariant = preferredVariant || firstLine?.variants?.[0];
   const [form, setForm] = useStateI({
     productLineId: firstLine?.id || '',
     variantId: firstVariant?.id || '',
     buy: '', expectedSell: '', quantity: 1, arrived: today, note: '',
   });
+  const [showQuickLine, setShowQuickLine] = useStateI(false);
+  const [showQuickVariant, setShowQuickVariant] = useStateI(false);
+  const [lineDropdownOpen, setLineDropdownOpen] = useStateI(false);
+  const [variantDropdownOpen, setVariantDropdownOpen] = useStateI(false);
+  const [lineSearch, setLineSearch] = useStateI('');
+  const [variantSearch, setVariantSearch] = useStateI('');
   const selectedLine = catalogLines.find(line => line.id === form.productLineId);
   const selectedVariant = selectedLine?.variants.find(v => v.id === form.variantId);
+  const normalizedLineSearch = lineSearch.trim().toLowerCase();
+  const visibleCatalogLines = normalizedLineSearch
+    ? catalogLines.filter(line => [line.name, line.brand, window.CATEGORIES.find(c => c.id === line.cat)?.name]
+        .some(value => String(value || '').toLowerCase().includes(normalizedLineSearch)))
+    : catalogLines;
+  const lineOptions = visibleCatalogLines.map(line => ({
+    value: line.id,
+    label: line.name,
+    meta: window.CATEGORIES.find(c => c.id === line.cat)?.name || '',
+  }));
+  const normalizedVariantSearch = variantSearch.trim().toLowerCase();
+  const variantOptions = (selectedLine?.variants || [])
+    .filter(variant => !normalizedVariantSearch || String(variant.name || '').toLowerCase().includes(normalizedVariantSearch))
+    .map(variant => ({ value: variant.id, label: variant.name }));
   const set = (k, v) => setForm({ ...form, [k]: v });
   const selectLine = (lineId) => {
     const line = catalogLines.find(x => x.id === lineId);
     setForm({ ...form, productLineId: lineId, variantId: line?.variants?.[0]?.id || '' });
+    setVariantSearch('');
   };
-  const valid = selectedLine && selectedVariant && form.buy && form.expectedSell;
+  const computedBuy = evaluatePriceExpression(form.buy);
+  const computedExpectedSell = form.expectedSell === '' ? computedBuy : evaluatePriceExpression(form.expectedSell);
+  const effectiveExpectedSell = computedExpectedSell ?? 0;
+  const valid = selectedLine && selectedVariant && computedBuy !== null;
   const save = () => {
     if (!valid) return;
     onSave({
@@ -604,16 +732,16 @@ function AddProductModal({ catalogLines, today, onClose, onSave }) {
       name: selectedLine.name,
       cat: selectedLine.cat,
       variant: selectedVariant.name,
-      buy: +form.buy,
-      expectedSell: +form.expectedSell,
+      buy: computedBuy,
+      expectedSell: effectiveExpectedSell,
       quantity: Math.max(1, Math.floor(+form.quantity || 1)),
       arrived: form.arrived,
       note: form.note,
     });
   };
 
-  const profit = (+form.expectedSell || 0) - (+form.buy || 0);
-  const ratio = +form.buy > 0 ? ((+form.expectedSell) / (+form.buy)) * 100 : 0;
+  const profit = effectiveExpectedSell - (computedBuy || 0);
+  const ratio = computedBuy > 0 ? (effectiveExpectedSell / computedBuy) * 100 : 0;
 
   return (
     <div className="modal-bg" onClick={onClose}>
@@ -625,16 +753,48 @@ function AddProductModal({ catalogLines, today, onClose, onSave }) {
         <div className="modal-body">
           <div className="field-row">
             <div className="field">
-              <label>Dòng sản phẩm</label>
-              <select value={form.productLineId} onChange={e => selectLine(e.target.value)} autoFocus>
-                {catalogLines.map(line => <option key={line.id} value={line.id}>{line.name}</option>)}
-              </select>
+              <label className="field-label-actions">
+                Dòng sản phẩm
+                <button type="button" onClick={() => setShowQuickLine(true)}>+ tạo nhanh</button>
+              </label>
+              <SearchableSelect
+                value={form.productLineId}
+                selectedLabel={selectedLine?.name}
+                placeholder="Tìm dòng sản phẩm theo tên..."
+                searchValue={lineSearch}
+                onSearch={setLineSearch}
+                options={lineOptions}
+                onSelect={selectLine}
+                open={lineDropdownOpen}
+                onOpen={() => {
+                  setLineDropdownOpen(true);
+                  setVariantDropdownOpen(false);
+                }}
+                onClose={() => setLineDropdownOpen(false)}
+                emptyText="Không tìm thấy dòng sản phẩm phù hợp"
+              />
             </div>
             <div className="field">
-              <label>Phân loại</label>
-              <select value={form.variantId} onChange={e => set('variantId', e.target.value)}>
-                {(selectedLine?.variants || []).map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-              </select>
+              <label className="field-label-actions">
+                Phân loại
+                <button type="button" onClick={() => setShowQuickVariant(true)} disabled={!selectedLine}>+ tạo nhanh</button>
+              </label>
+              <SearchableSelect
+                value={form.variantId}
+                selectedLabel={selectedVariant?.name}
+                placeholder="Tìm phân loại..."
+                searchValue={variantSearch}
+                onSearch={setVariantSearch}
+                options={variantOptions}
+                onSelect={value => set('variantId', value)}
+                open={variantDropdownOpen}
+                onOpen={() => {
+                  setVariantDropdownOpen(true);
+                  setLineDropdownOpen(false);
+                }}
+                onClose={() => setVariantDropdownOpen(false)}
+                emptyText="Không tìm thấy phân loại phù hợp"
+              />
             </div>
           </div>
           <div className="field-row">
@@ -650,11 +810,18 @@ function AddProductModal({ catalogLines, today, onClose, onSave }) {
           <div className="field-row">
             <div className="field">
               <label>Giá mua (nghìn)</label>
-              <input type="number" value={form.buy} onChange={e => set('buy', e.target.value)} placeholder="vd. 580" />
+              <input
+                type="text"
+                inputMode="decimal"
+                value={form.buy}
+                onChange={e => set('buy', e.target.value)}
+                onBlur={e => set('buy', settlePriceInput(e.target.value))}
+                placeholder="vd. 580 hoặc 8 + 10"
+              />
             </div>
             <div className="field">
               <label>Giá bán dự kiến (nghìn)</label>
-              <input type="number" value={form.expectedSell} onChange={e => set('expectedSell', e.target.value)} placeholder="vd. 720" />
+              <input type="number" value={form.expectedSell} onChange={e => set('expectedSell', e.target.value)} placeholder={form.buy ? `mặc định ${form.buy}` : 'để trống = giá mua'} />
             </div>
           </div>
           <div className="field-row">
@@ -671,7 +838,7 @@ function AddProductModal({ catalogLines, today, onClose, onSave }) {
             <label>Ghi chú</label>
             <input type="text" value={form.note} onChange={e => set('note', e.target.value)} placeholder="tuỳ chọn" />
           </div>
-          {form.buy && form.expectedSell && (
+          {computedBuy !== null && (
             <div className="unit-summary">
               <div className="row">
                 <span className="lbl">Lợi nhuận dự kiến</span>
@@ -694,6 +861,75 @@ function AddProductModal({ catalogLines, today, onClose, onSave }) {
             LƯU VÀO KHO
           </button>
         </div>
+      </div>
+      {showQuickLine && (
+        <QuickCreateLineModal
+          onClose={() => setShowQuickLine(false)}
+          onSave={({ name, cat, variant }) => {
+            const line = onCreateLine(name, cat);
+            if (!line) return;
+            const createdVariant = variant.trim() && variant.trim() !== 'Mặc định'
+              ? onCreateVariant(line, variant)
+              : line.variants?.[0];
+            setForm(prev => ({
+              ...prev,
+              productLineId: line.id,
+              variantId: createdVariant?.id || line.variants?.[0]?.id || '',
+            }));
+            setShowQuickLine(false);
+          }}
+        />
+      )}
+      {showQuickVariant && selectedLine && (
+        <QuickCreateVariantModal
+          line={selectedLine}
+          onClose={() => setShowQuickVariant(false)}
+          onSave={(name) => {
+            const variant = onCreateVariant(selectedLine, name);
+            if (!variant) return;
+            set('variantId', variant.id);
+            setShowQuickVariant(false);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function QuickCreateLineModal({ onClose, onSave }) {
+  const [form, setForm] = useStateI({ name: '', cat: window.CATEGORIES[0]?.id || '', variant: '' });
+  const valid = form.name.trim() && form.cat;
+  return (
+    <div className="modal-bg nested" onClick={onClose}>
+      <div className="modal quick-catalog-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-head">
+          <div className="modal-title"><span className="accent"></span>TẠO NHANH DÒNG SẢN PHẨM</div>
+          <button className="close-x" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">
+          <div className="field"><label>Tên dòng sản phẩm</label><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} autoFocus /></div>
+          <div className="field-row">
+            <div className="field"><label>Danh mục</label><select value={form.cat} onChange={e => setForm({ ...form, cat: e.target.value })}>{window.CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+            <div className="field"><label>Phân loại đầu tiên</label><input value={form.variant} onChange={e => setForm({ ...form, variant: e.target.value })} placeholder="để trống = Mặc định" /></div>
+          </div>
+        </div>
+        <div className="modal-foot"><button className="ctl ghost" onClick={onClose}>HUỶ</button><button className="ctl primary" disabled={!valid} onClick={() => onSave(form)}>TẠO</button></div>
+      </div>
+    </div>
+  );
+}
+
+function QuickCreateVariantModal({ line, onClose, onSave }) {
+  const [name, setName] = useStateI('');
+  return (
+    <div className="modal-bg nested" onClick={onClose}>
+      <div className="modal quick-catalog-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-head"><div className="modal-title"><span className="accent"></span>TẠO NHANH PHÂN LOẠI</div><button className="close-x" onClick={onClose}>×</button></div>
+        <div className="modal-body">
+          <div className="unit-summary" style={{ marginBottom: 16 }}><div className="row"><span className="lbl">Dòng sản phẩm</span><span>{line.name}</span></div></div>
+          <div className="field"><label>Tên phân loại</label><input value={name} onChange={e => setName(e.target.value)} autoFocus /></div>
+        </div>
+        <div className="modal-foot"><button className="ctl ghost" onClick={onClose}>HUỶ</button><button className="ctl primary" disabled={!name.trim()} onClick={() => onSave(name)}>TẠO</button></div>
       </div>
     </div>
   );

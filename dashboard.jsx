@@ -28,6 +28,47 @@ function RateBar({ pct }) {
   );
 }
 
+
+function dashDateOnly(value) {
+  const d = value instanceof Date ? new Date(value) : new Date(value);
+  if (Number.isNaN(d.getTime())) return new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function dashDateIso(value) {
+  const d = dashDateOnly(value);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function dashAddDays(value, days) {
+  const d = dashDateOnly(value);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+function dashboardRangeBounds(range, todayD) {
+  if (range.kind === 'day') {
+    const start = dashDateOnly(range.date || todayD);
+    return { start, end: start, days: 1 };
+  }
+  if (range.kind === '7days') {
+    const end = dashDateOnly(range.end || todayD);
+    return { start: dashAddDays(end, -6), end, days: 7 };
+  }
+  const start = new Date(range.year, range.month, 1);
+  const rawEnd = new Date(range.year, range.month + 1, 0);
+  const end = rawEnd > todayD ? dashDateOnly(todayD) : rawEnd;
+  return { start, end, days: Math.max(1, Math.floor((end - start) / 86400000) + 1) };
+}
+
+function dashboardRangeLabel(range, todayD) {
+  const bounds = dashboardRangeBounds(range, todayD);
+  if (range.kind === 'day') return `Ngày ${bounds.start.toLocaleDateString('vi-VN')}`;
+  if (range.kind === '7days') return `7 ngày ${bounds.start.toLocaleDateString('vi-VN')} - ${bounds.end.toLocaleDateString('vi-VN')}`;
+  return `${MONTH_NAMES[range.month]} ${range.year}`;
+}
+
 function Dashboard({
   units,
   sold,
@@ -79,12 +120,15 @@ function Dashboard({
     : 'Click để xem chi tiết đến đơn vị nghìn đồng';
 
   // Range label / sub-title
-  const rangeLabel = `${MONTH_NAMES[range.month]} ${range.year}`;
+  const rangeBounds = useMemoD(() => dashboardRangeBounds(range, todayD), [range, today]);
+  const rangeLabel = dashboardRangeLabel(range, todayD);
 
-  // Dashboard luôn xem theo tháng bán hàng; ngày bán quyết định giao dịch thuộc tháng nào.
-  const inPeriod = (d, r) => {
-    return d.getFullYear() === r.year && d.getMonth() === r.month;
+  const inPeriod = (d, r = range) => {
+    const { start, end } = dashboardRangeBounds(r, todayD);
+    const day = dashDateOnly(d);
+    return day >= start && day <= end;
   };
+
 
   const filtered = useMemoD(() => {
     return sold.filter(s => {
@@ -94,11 +138,11 @@ function Dashboard({
     });
   }, [sold, range, catFilter]);
 
-  const monthlyAffiliateEntries = useMemoD(() => {
+  const periodAffiliateEntries = useMemoD(() => {
     return (affiliateIncomes || []).filter(entry => inPeriod(new Date(entry.receivedAt), range));
   }, [affiliateIncomes, range]);
-  const paidAffiliateEntries = monthlyAffiliateEntries.filter(entry => entry.status !== 'pending');
-  const pendingAffiliateEntries = monthlyAffiliateEntries.filter(entry => entry.status === 'pending');
+  const paidAffiliateEntries = periodAffiliateEntries.filter(entry => entry.status !== 'pending');
+  const pendingAffiliateEntries = periodAffiliateEntries.filter(entry => entry.status === 'pending');
   const paidAffiliateIncome = paidAffiliateEntries.reduce((sum, entry) => sum + (+entry.amount || 0), 0);
   const pendingAffiliateIncome = pendingAffiliateEntries.reduce((sum, entry) => sum + (+entry.amount || 0), 0);
   const totalAffiliateIncome = paidAffiliateIncome + pendingAffiliateIncome;
@@ -118,8 +162,7 @@ function Dashboard({
   const itemsSold = filtered.length;
   const lossCount = filtered.filter(x => x.sell < x.buy).length;
   const avgRatio = totalBuy > 0 ? (totalRev / totalBuy) * 100 : 0;
-  const selectedMonthEnd = new Date(range.year, range.month + 1, 0);
-  const periodEndDate = selectedMonthEnd > todayD ? todayD : selectedMonthEnd;
+  const periodEndDate = rangeBounds.end;
   const inventoryValueAt = (date) => units
     .filter(u => {
       const arrived = new Date(u.arrived);
@@ -130,63 +173,62 @@ function Dashboard({
     .reduce((sum, u) => sum + u.buy, 0);
   const currentInventoryValue = inventoryValueAt(periodEndDate);
 
-  // prev period delta — tháng trước là kỳ so sánh tự nhiên của tháng đang chọn
+  // prev period delta ? compare against the immediately previous period with the same length.
   const prevDelta = useMemoD(() => {
-    const cutoff = new Date(range.year, range.month, 1);
-    const prevCutoff = new Date(range.year, range.month - 1, 1);
+    const currentStart = rangeBounds.start;
+    const currentEnd = rangeBounds.end;
+    const prevEnd = dashAddDays(currentStart, -1);
+    const prevStart = dashAddDays(prevEnd, -(rangeBounds.days - 1));
+    const inPrevRange = (dateValue) => {
+      const d = dashDateOnly(dateValue);
+      return d >= prevStart && d <= prevEnd;
+    };
     const prev = sold.filter(s => {
-      const d = new Date(s.sold);
-      const inRange = d >= prevCutoff && d < cutoff;
       const inCat = catFilter === 'all' || s.cat === catFilter;
-      return inRange && inCat;
+      return inPrevRange(s.sold) && inCat;
     });
     const pRev = prev.reduce((s, x) => s + x.sell, 0);
     const pSalesProfit = prev.reduce((s, x) => s + (x.sell - x.buy), 0);
     const pAffiliateIncome = (affiliateIncomes || [])
       .filter(entry => {
-        const d = new Date(entry.receivedAt);
         const includedByStatus = entry.status !== 'pending' || includePendingAffiliateInProfit;
-        return d >= prevCutoff && d < cutoff && includedByStatus;
+        return inPrevRange(entry.receivedAt) && includedByStatus;
       })
       .reduce((sum, entry) => sum + (+entry.amount || 0), 0);
     const pProfit = pSalesProfit + (includeAffiliateInProfit ? pAffiliateIncome : 0);
-    const prevInventoryValue = inventoryValueAt(new Date(cutoff.getTime() - 86400000));
+    const prevInventoryValue = inventoryValueAt(prevEnd);
     return {
       rev:    pRev    !== 0 ? ((totalRev    - pRev)    / Math.abs(pRev))    * 100 : null,
       profit: pProfit !== 0 ? ((totalProfit - pProfit) / Math.abs(pProfit)) * 100 : null,
       items:  prev.length    ? ((itemsSold  - prev.length) / prev.length)   * 100 : null,
       inventory: prevInventoryValue !== 0 ? ((currentInventoryValue - prevInventoryValue) / Math.abs(prevInventoryValue)) * 100 : null,
     };
-  }, [sold, range, catFilter, totalRev, totalProfit, itemsSold, currentInventoryValue, units, affiliateIncomes, includeAffiliateInProfit]);
+  }, [sold, rangeBounds, catFilter, totalRev, totalProfit, itemsSold, currentInventoryValue, units, affiliateIncomes, includeAffiliateInProfit, includePendingAffiliateInProfit]);
 
-  // Line chart: bucket theo từng ngày trong tháng bán đang chọn
+
+  // Line chart: bucket by day in the selected range.
   const lineData = useMemoD(() => {
-    const startDate = new Date(range.year, range.month, 1);
-    const monthEnd = new Date(range.year, range.month + 1, 0);
-    const chartEnd = monthEnd > todayD ? todayD : monthEnd;
-    const days = chartEnd.getDate();
     const buckets = [];
-    for (let i = 0; i < days; i++) {
-      const d = new Date(startDate);
-      d.setDate(startDate.getDate() + i);
+    for (let i = 0; i < rangeBounds.days; i++) {
+      const d = dashAddDays(rangeBounds.start, i);
       buckets.push({ date: d, rev: 0, salesProfit: 0, affiliate: 0, profit: 0, inventory: inventoryValueAt(d) });
     }
     filtered.forEach(s => {
-      const sd = new Date(s.sold);
-      const idx = buckets.findIndex(b => b.date.toDateString() === sd.toDateString());
+      const sd = dashDateOnly(s.sold);
+      const idx = buckets.findIndex(b => b.date.getTime() === sd.getTime());
       if (idx >= 0) {
         buckets[idx].rev += s.sell;
         buckets[idx].salesProfit += (s.sell - s.buy);
       }
     });
     if (includeAffiliateInProfit) {
-      monthlyAffiliateEntries
+      periodAffiliateEntries
         .filter(entry => entry.status !== 'pending' || includePendingAffiliateInProfit)
         .forEach(entry => {
-        const receivedAt = new Date(entry.receivedAt);
-        const idx = buckets.findIndex(b => b.date.toDateString() === receivedAt.toDateString());
-        if (idx >= 0) buckets[idx].affiliate += (+entry.amount || 0);
-      });
+          const receivedAt = dashDateOnly(entry.receivedAt);
+          const idx = buckets.findIndex(b => b.date.getTime() === receivedAt.getTime());
+          if (idx >= 0) buckets[idx].affiliate += (+entry.amount || 0);
+        });
     }
     buckets.forEach(bucket => {
       bucket.profit = bucket.salesProfit + bucket.affiliate;
@@ -199,7 +241,8 @@ function Dashboard({
       profit: buckets.map(b => b.profit),
       inventory: buckets.map(b => b.inventory),
     };
-  }, [filtered, range, units, catFilter, monthlyAffiliateEntries, includeAffiliateInProfit, includePendingAffiliateInProfit]);
+  }, [filtered, rangeBounds, units, catFilter, periodAffiliateEntries, includeAffiliateInProfit, includePendingAffiliateInProfit]);
+
 
   // Bar chart: profit by CATEGORY (already aggregated correctly)
   const profitByCat = useMemoD(() => {
@@ -234,6 +277,11 @@ function Dashboard({
     inPeriodSales.forEach(s => { m[s.cat] = (m[s.cat] || 0) + 1; });
     return m;
   }, [sold, range]);
+  const usedCategoryIds = useMemoD(() => new Set(units.map(unit => unit.cat)), [units]);
+  const visibleCategories = useMemoD(
+    () => window.CATEGORIES.filter(category => usedCategoryIds.has(category.id)),
+    [usedCategoryIds]
+  );
 
   const timelinePoints = useMemoD(() => [
     ...sold.map(s => ({ date: s.sold })),
@@ -291,7 +339,7 @@ function Dashboard({
         <div className="page-controls">
           <ImportDataButton today={today} onImport={importUnits} disabled={readOnly} />
           <ExportDataButton units={units} today={today} />
-          <CategoryPicker value={catFilter} onChange={setCatFilter} counts={catCounts} />
+          <CategoryPicker value={catFilter} onChange={setCatFilter} counts={catCounts} categories={visibleCategories} />
           <DateRangePicker value={range} onChange={setRange} dataPoints={timelinePoints} today={today} />
         </div>
       </div>
@@ -350,7 +398,7 @@ function Dashboard({
           title="Quản lý các khoản hoa hồng AFF trong tháng"
         >
           <div className="kpi-label">Hoa hồng AFF</div>
-          {monthlyAffiliateEntries.length > 0 ? (
+          {periodAffiliateEntries.length > 0 ? (
             <>
               <div className={`kpi-value mono ${detailedMode ? 'detailed' : ''}`}>
                 {fmtAmount(totalAffiliateIncome)}<span className="unit">{moneyUnit}</span>
@@ -657,7 +705,7 @@ function Dashboard({
           totalProfit={totalProfit}
           salesProfit={salesProfit}
           profitLabel={profitLabel}
-          affiliateEntries={monthlyAffiliateEntries}
+          affiliateEntries={periodAffiliateEntries}
           totalAffiliateIncome={totalAffiliateIncome}
           paidAffiliateIncome={paidAffiliateIncome}
           pendingAffiliateIncome={pendingAffiliateIncome}
@@ -682,7 +730,7 @@ function Dashboard({
       )}
       {showAffiliateModal && (
         <AffiliateIncomeModal
-          entries={monthlyAffiliateEntries}
+          entries={periodAffiliateEntries}
           range={range}
           rangeLabel={rangeLabel}
           today={today}
@@ -942,12 +990,12 @@ function AnalyticsPanel({ title, subtitle, children }) {
 }
 
 function defaultAffiliateDate(range, today) {
-  const todayD = new Date(today);
-  if (todayD.getFullYear() === range.year && todayD.getMonth() === range.month) {
-    return today;
-  }
-  return `${range.year}-${String(range.month + 1).padStart(2, '0')}-01`;
+  const todayD = dashDateOnly(today);
+  const { start, end } = dashboardRangeBounds(range, todayD);
+  if (todayD >= start && todayD <= end) return dashDateIso(todayD);
+  return dashDateIso(start);
 }
+
 
 function AffiliateStatusPill({ status }) {
   const pending = status === 'pending';
@@ -969,9 +1017,9 @@ function AffiliateIncomeModal({
   onDelete,
   onClose,
 }) {
-  const monthStart = `${range.year}-${String(range.month + 1).padStart(2, '0')}-01`;
-  const monthEndDate = new Date(range.year, range.month + 1, 0);
-  const monthEnd = `${range.year}-${String(range.month + 1).padStart(2, '0')}-${String(monthEndDate.getDate()).padStart(2, '0')}`;
+  const affBounds = dashboardRangeBounds(range, dashDateOnly(today));
+  const monthStart = dashDateIso(affBounds.start);
+  const monthEnd = dashDateIso(affBounds.end);
   const emptyForm = () => ({
     amount: '',
     receivedAt: defaultAffiliateDate(range, today),

@@ -291,22 +291,57 @@ function buildSalesWorkbook(units, today) {
   return { workbook, inStock, sold };
 }
 
-function exportSalesWorkbook(units, today) {
+async function exportSalesWorkbook(units, today) {
   if (!window.XLSX) {
-    alert('Không tải được bộ tạo file Excel. Vui lòng tải lại trang rồi thử lại.');
+    alert('Kh\u00f4ng t\u1ea3i \u0111\u01b0\u1ee3c b\u1ed9 t\u1ea1o file Excel. Vui l\u00f2ng t\u1ea3i l\u1ea1i trang r\u1ed3i th\u1eed l\u1ea1i.');
     return;
   }
 
   const { workbook } = buildSalesWorkbook(units, today);
-  XLSX.writeFile(workbook, `nexus_gear_xuat_du_lieu_${exportTimestamp()}.xlsx`, {
-    cellStyles: true,
-  });
+  const suggestedName = `nexus_gear_xuat_du_lieu_${exportTimestamp()}.xlsx`;
+
+  try {
+    if (window.isSecureContext && window.showSaveFilePicker) {
+      const workbookBytes = XLSX.write(workbook, {
+        bookType: 'xlsx',
+        type: 'array',
+        cellStyles: true,
+      });
+      const handle = await window.showSaveFilePicker({
+        suggestedName,
+        types: [{
+          description: 'Excel Workbook',
+          accept: {
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+          },
+        }],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(new Blob([workbookBytes], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      }));
+      await writable.close();
+      return;
+    }
+
+    // Fallback for browsers / origins that cannot open the save-location picker.
+    XLSX.writeFile(workbook, suggestedName, { cellStyles: true });
+  } catch (error) {
+    if (error?.name === 'AbortError') return;
+    console.error('Failed to export Excel workbook:', error);
+    try {
+      XLSX.writeFile(workbook, suggestedName, { cellStyles: true });
+    } catch (fallbackError) {
+      console.error('Excel fallback export also failed:', fallbackError);
+      alert('Kh\u00f4ng th\u1ec3 l\u01b0u file Excel. Vui l\u00f2ng th\u1eed l\u1ea1i.');
+    }
+  }
 }
 
 function ExportDataButton({ units, today }) {
   return (
     <button className="ctl" onClick={() => exportSalesWorkbook(units, today)}>
-      <span style={{ fontSize: 15, lineHeight: 1 }}>⇩</span> XUẤT EXCEL
+      <span style={{ fontSize: 15, lineHeight: 1 }}>{'\u21e9'}</span> {'XU\u1ea4T EXCEL'}
     </button>
   );
 }

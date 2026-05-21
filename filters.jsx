@@ -27,27 +27,47 @@ const Chevron = () => (
 
 const MONTHS = ['Th 1','Th 2','Th 3','Th 4','Th 5','Th 6','Th 7','Th 8','Th 9','Th 10','Th 11','Th 12'];
 
-// ===== Sold-month picker =====
-// value shape: { kind: 'month', year: 2026, month: 4 } (0-indexed month)
+// ===== Revenue period picker =====
+// value shapes:
+// { kind: 'day', date: 'YYYY-MM-DD' }
+// { kind: '7days', end: 'YYYY-MM-DD' }
+// { kind: 'month', year: 2026, month: 4 } (0-indexed month)
+function pickerIsoDate(value) {
+  const d = value ? new Date(value) : new Date();
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function pickerAddDays(value, days) {
+  const d = value ? new Date(value) : new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
 function DateRangePicker({ value, onChange, dataPoints, today }) {
   const [open, setOpen] = useStateDD(false);
   const ref = useRefDD(null);
   useClickOutside(ref, () => setOpen(false), open);
 
   const todayD = new Date(today);
-  const [viewYear, setViewYear] = useStateDD(value.kind === 'month' ? value.year : todayD.getFullYear());
+  const activeMonthYear = value.kind === 'month' ? value.year : todayD.getFullYear();
+  const [viewYear, setViewYear] = useStateDD(activeMonthYear);
+  const selectedDate = value.kind === 'day' ? value.date : pickerIsoDate(todayD);
+  const selectedEnd = value.kind === '7days' ? value.end : pickerIsoDate(todayD);
+  const label = value.kind === 'day'
+    ? `1 ngày · ${new Date(selectedDate).toLocaleDateString('vi-VN')}`
+    : value.kind === '7days'
+      ? `7 ngày · ${pickerAddDays(selectedEnd, -6).toLocaleDateString('vi-VN')} - ${new Date(selectedEnd).toLocaleDateString('vi-VN')}`
+      : `${MONTHS[value.month]}, ${value.year}`;
 
-  const label = `${MONTHS[value.month]}, ${value.year}`;
-
-  // Months with at least one relevant data point, in current viewYear
   const monthsWithData = new Set();
   dataPoints.forEach(s => {
     const d = new Date(s.sold || s.date);
     if (d.getFullYear() === viewYear) monthsWithData.add(d.getMonth());
   });
 
-  // Years available
-  const yearsAvail = new Set(dataPoints.map(s => new Date(s.sold || s.date).getFullYear()));
+  const yearsAvail = new Set(dataPoints.map(s => new Date(s.sold || s.date).getFullYear()).filter(Number.isFinite));
   const minYear = Math.min(...yearsAvail, todayD.getFullYear());
   const maxYear = Math.max(...yearsAvail, todayD.getFullYear());
 
@@ -63,27 +83,43 @@ function DateRangePicker({ value, onChange, dataPoints, today }) {
           </svg>
         </span>
         <span className="dd-text">
-          <span className="dd-label">Tháng bán hàng</span>
+          <span className="dd-label">Khoảng doanh thu</span>
           <span className="dd-value">{label}</span>
         </span>
         <Chevron />
       </button>
       {open && (
-        <div className="dd-pop" style={{ minWidth: 300 }}>
+        <div className="dd-pop" style={{ minWidth: 330 }}>
+          <div className="dd-section-label">Xem nhanh</div>
+          <div className="range-mode-row">
+            <button className={`dd-mode ${value.kind === 'day' ? 'selected' : ''}`} onClick={() => onChange({ kind: 'day', date: selectedDate })}>1 ngày</button>
+            <button className={`dd-mode ${value.kind === '7days' ? 'selected' : ''}`} onClick={() => onChange({ kind: '7days', end: selectedEnd })}>7 ngày</button>
+            <button className={`dd-mode ${value.kind === 'month' ? 'selected' : ''}`} onClick={() => onChange({ kind: 'month', year: viewYear, month: value.kind === 'month' ? value.month : todayD.getMonth() })}>Theo tháng</button>
+          </div>
+
+          {value.kind === 'day' && (
+            <div className="dd-date-row">
+              <label>Ngày bán</label>
+              <input type="date" value={selectedDate} max={pickerIsoDate(todayD)} onChange={e => onChange({ kind: 'day', date: e.target.value })} />
+            </div>
+          )}
+          {value.kind === '7days' && (
+            <div className="dd-date-row">
+              <label>Kết thúc ngày</label>
+              <input type="date" value={selectedEnd} max={pickerIsoDate(todayD)} onChange={e => onChange({ kind: '7days', end: e.target.value })} />
+            </div>
+          )}
+
           <div className="dd-section-label">Chọn theo tháng bán</div>
           <div className="dd-year">
-            <button
-              onClick={() => setViewYear(y => y - 1)}
-              disabled={viewYear <= minYear}>‹</button>
+            <button onClick={() => setViewYear(y => y - 1)} disabled={viewYear <= minYear}>{'<'}</button>
             <span className="dd-year-label">{viewYear}</span>
-            <button
-              onClick={() => setViewYear(y => y + 1)}
-              disabled={viewYear >= maxYear}>›</button>
+            <button onClick={() => setViewYear(y => y + 1)} disabled={viewYear >= maxYear}>{'>'}</button>
           </div>
           <div className="dd-months">
             {MONTHS.map((m, i) => {
               const has = monthsWithData.has(i);
-              const isSelected = value.year === viewYear && value.month === i;
+              const isSelected = value.kind === 'month' && value.year === viewYear && value.month === i;
               const isFuture = viewYear > todayD.getFullYear() || (viewYear === todayD.getFullYear() && i > todayD.getMonth());
               return (
                 <button key={i}
@@ -102,14 +138,14 @@ function DateRangePicker({ value, onChange, dataPoints, today }) {
 }
 
 // ===== Category picker =====
-function CategoryPicker({ value, onChange, counts }) {
+function CategoryPicker({ value, onChange, counts, categories = window.CATEGORIES }) {
   const [open, setOpen] = useStateDD(false);
   const ref = useRefDD(null);
   useClickOutside(ref, () => setOpen(false), open);
 
   const selected = value === 'all'
     ? { name: 'Tất cả danh mục', color: '#6b6b80' }
-    : window.CATEGORIES.find(c => c.id === value);
+    : categories.find(c => c.id === value);
 
   return (
     <div className="dd-wrap" ref={ref}>
@@ -141,7 +177,7 @@ function CategoryPicker({ value, onChange, counts }) {
             <span className="dd-cnt">{counts.all || 0}</span>
           </button>
           <div className="dd-divider"></div>
-          {window.CATEGORIES.map(c => (
+          {categories.map(c => (
             <button key={c.id}
               className={`dd-item ${value === c.id ? 'selected' : ''}`}
               onClick={() => { onChange(c.id); setOpen(false); }}>

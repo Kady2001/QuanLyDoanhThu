@@ -1,23 +1,4 @@
 (() => {
-  var __defProp = Object.defineProperty;
-  var __defProps = Object.defineProperties;
-  var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
-  var __getOwnPropSymbols = Object.getOwnPropertySymbols;
-  var __hasOwnProp = Object.prototype.hasOwnProperty;
-  var __propIsEnum = Object.prototype.propertyIsEnumerable;
-  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-  var __spreadValues = (a, b) => {
-    for (var prop in b || (b = {}))
-      if (__hasOwnProp.call(b, prop))
-        __defNormalProp(a, prop, b[prop]);
-    if (__getOwnPropSymbols)
-      for (var prop of __getOwnPropSymbols(b)) {
-        if (__propIsEnum.call(b, prop))
-          __defNormalProp(a, prop, b[prop]);
-      }
-    return a;
-  };
-  var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
   const { useState, useMemo } = React;
   const fmtK = (n) => {
     if (n === 0) return "0";
@@ -170,9 +151,10 @@
       const x2 = r + r * Math.cos(end), y2 = r + r * Math.sin(end);
       const xi1 = r + inner * Math.cos(end), yi1 = r + inner * Math.sin(end);
       const xi2 = r + inner * Math.cos(start), yi2 = r + inner * Math.sin(start);
-      return __spreadProps(__spreadValues({}, d), {
+      return {
+        ...d,
         path: `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} L ${xi1} ${yi1} A ${inner} ${inner} 0 ${large} 0 ${xi2} ${yi2} Z`
-      });
+      };
     });
     return /* @__PURE__ */ React.createElement("svg", { viewBox: `0 0 ${size} ${size}`, width: size, height: size }, segs.map((s, i) => /* @__PURE__ */ React.createElement(
       "path",
@@ -183,9 +165,9 @@
         stroke: "#fff",
         strokeWidth: "2",
         style: { cursor: onSegmentClick ? "pointer" : "default" },
-        onClick: () => onSegmentClick == null ? void 0 : onSegmentClick(s)
+        onClick: () => onSegmentClick?.(s)
       }
-    )), /* @__PURE__ */ React.createElement("text", { x: r, y: r - 4, textAnchor: "middle", fill: "#9a9aae", fontSize: "10", letterSpacing: "1", fontWeight: "700", pointerEvents: "none" }, centerLabel), /* @__PURE__ */ React.createElement("text", { x: r, y: r + 14, textAnchor: "middle", fill: "#0f0f1a", fontSize: "16", fontWeight: "800", fontFamily: "JetBrains Mono", pointerEvents: "none" }, centerValue != null ? centerValue : total));
+    )), /* @__PURE__ */ React.createElement("text", { x: r, y: r - 4, textAnchor: "middle", fill: "#9a9aae", fontSize: "10", letterSpacing: "1", fontWeight: "700", pointerEvents: "none" }, centerLabel), /* @__PURE__ */ React.createElement("text", { x: r, y: r + 14, textAnchor: "middle", fill: "#0f0f1a", fontSize: "16", fontWeight: "800", fontFamily: "JetBrains Mono", pointerEvents: "none" }, centerValue ?? total));
   }
   Object.assign(window, { Sparkline, Gauge, LineChart, BarChart, Donut, fmtK, fmtVND });
 })();

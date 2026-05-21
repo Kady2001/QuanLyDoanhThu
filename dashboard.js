@@ -1,34 +1,50 @@
 (() => {
-  var __defProp = Object.defineProperty;
-  var __defProps = Object.defineProperties;
-  var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
-  var __getOwnPropSymbols = Object.getOwnPropertySymbols;
-  var __hasOwnProp = Object.prototype.hasOwnProperty;
-  var __propIsEnum = Object.prototype.propertyIsEnumerable;
-  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-  var __spreadValues = (a, b) => {
-    for (var prop in b || (b = {}))
-      if (__hasOwnProp.call(b, prop))
-        __defNormalProp(a, prop, b[prop]);
-    if (__getOwnPropSymbols)
-      for (var prop of __getOwnPropSymbols(b)) {
-        if (__propIsEnum.call(b, prop))
-          __defNormalProp(a, prop, b[prop]);
-      }
-    return a;
-  };
-  var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
   const { useState: useStateD, useMemo: useMemoD } = React;
   const MONTH_NAMES = ["Th\xE1ng 1", "Th\xE1ng 2", "Th\xE1ng 3", "Th\xE1ng 4", "Th\xE1ng 5", "Th\xE1ng 6", "Th\xE1ng 7", "Th\xE1ng 8", "Th\xE1ng 9", "Th\xE1ng 10", "Th\xE1ng 11", "Th\xE1ng 12"];
   function CatPill({ cat }) {
     const c = window.CATEGORIES.find((x) => x.id === cat);
-    return /* @__PURE__ */ React.createElement("span", { className: `cat-pill cat-${cat}` }, /* @__PURE__ */ React.createElement("span", { className: "dot", style: { background: (c == null ? void 0 : c.color) || "var(--muted)" } }), (c == null ? void 0 : c.name) || cat);
+    return /* @__PURE__ */ React.createElement("span", { className: `cat-pill cat-${cat}` }, /* @__PURE__ */ React.createElement("span", { className: "dot", style: { background: c?.color || "var(--muted)" } }), c?.name || cat);
   }
   function RateBar({ pct }) {
     const w = Math.min(Math.max((pct - 70) / 90 * 100, 2), 100);
     const cls = pct >= 110 ? "" : pct >= 100 ? "flat" : "neg";
     const color = pct >= 110 ? "#10b981" : pct >= 100 ? "#9a9aae" : "#e11d48";
     return /* @__PURE__ */ React.createElement("span", { className: "rate-bar" }, /* @__PURE__ */ React.createElement("span", { className: "bar" }, /* @__PURE__ */ React.createElement("i", { className: cls, style: { width: `${w}%` } })), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 12, fontWeight: 800, color, minWidth: 56, textAlign: "right" } }, pct.toFixed(1), "%"));
+  }
+  function dashDateOnly(value) {
+    const d = value instanceof Date ? new Date(value) : new Date(value);
+    if (Number.isNaN(d.getTime())) return /* @__PURE__ */ new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+  function dashDateIso(value) {
+    const d = dashDateOnly(value);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+  function dashAddDays(value, days) {
+    const d = dashDateOnly(value);
+    d.setDate(d.getDate() + days);
+    return d;
+  }
+  function dashboardRangeBounds(range, todayD) {
+    if (range.kind === "day") {
+      const start2 = dashDateOnly(range.date || todayD);
+      return { start: start2, end: start2, days: 1 };
+    }
+    if (range.kind === "7days") {
+      const end2 = dashDateOnly(range.end || todayD);
+      return { start: dashAddDays(end2, -6), end: end2, days: 7 };
+    }
+    const start = new Date(range.year, range.month, 1);
+    const rawEnd = new Date(range.year, range.month + 1, 0);
+    const end = rawEnd > todayD ? dashDateOnly(todayD) : rawEnd;
+    return { start, end, days: Math.max(1, Math.floor((end - start) / 864e5) + 1) };
+  }
+  function dashboardRangeLabel(range, todayD) {
+    const bounds = dashboardRangeBounds(range, todayD);
+    if (range.kind === "day") return `Ng\xE0y ${bounds.start.toLocaleDateString("vi-VN")}`;
+    if (range.kind === "7days") return `7 ng\xE0y ${bounds.start.toLocaleDateString("vi-VN")} - ${bounds.end.toLocaleDateString("vi-VN")}`;
+    return `${MONTH_NAMES[range.month]} ${range.year}`;
   }
   function Dashboard({
     units,
@@ -75,9 +91,12 @@
     const moneyUnit = detailedMode ? "ngh\xECn \u0111" : "\u0111";
     const toggleMoneyDetail = () => setDetailedMode((prev) => !prev);
     const moneyToggleTitle = detailedMode ? "Click \u0111\u1EC3 thu g\u1ECDn s\u1ED1 ti\u1EC1n" : "Click \u0111\u1EC3 xem chi ti\u1EBFt \u0111\u1EBFn \u0111\u01A1n v\u1ECB ngh\xECn \u0111\u1ED3ng";
-    const rangeLabel = `${MONTH_NAMES[range.month]} ${range.year}`;
-    const inPeriod = (d, r) => {
-      return d.getFullYear() === r.year && d.getMonth() === r.month;
+    const rangeBounds = useMemoD(() => dashboardRangeBounds(range, todayD), [range, today]);
+    const rangeLabel = dashboardRangeLabel(range, todayD);
+    const inPeriod = (d, r = range) => {
+      const { start, end } = dashboardRangeBounds(r, todayD);
+      const day = dashDateOnly(d);
+      return day >= start && day <= end;
     };
     const filtered = useMemoD(() => {
       return sold.filter((s) => {
@@ -86,11 +105,11 @@
         return inPeriod(d, range) && inCat;
       });
     }, [sold, range, catFilter]);
-    const monthlyAffiliateEntries = useMemoD(() => {
+    const periodAffiliateEntries = useMemoD(() => {
       return (affiliateIncomes || []).filter((entry) => inPeriod(new Date(entry.receivedAt), range));
     }, [affiliateIncomes, range]);
-    const paidAffiliateEntries = monthlyAffiliateEntries.filter((entry) => entry.status !== "pending");
-    const pendingAffiliateEntries = monthlyAffiliateEntries.filter((entry) => entry.status === "pending");
+    const paidAffiliateEntries = periodAffiliateEntries.filter((entry) => entry.status !== "pending");
+    const pendingAffiliateEntries = periodAffiliateEntries.filter((entry) => entry.status === "pending");
     const paidAffiliateIncome = paidAffiliateEntries.reduce((sum, entry) => sum + (+entry.amount || 0), 0);
     const pendingAffiliateIncome = pendingAffiliateEntries.reduce((sum, entry) => sum + (+entry.amount || 0), 0);
     const totalAffiliateIncome = paidAffiliateIncome + pendingAffiliateIncome;
@@ -104,8 +123,7 @@
     const itemsSold = filtered.length;
     const lossCount = filtered.filter((x) => x.sell < x.buy).length;
     const avgRatio = totalBuy > 0 ? totalRev / totalBuy * 100 : 0;
-    const selectedMonthEnd = new Date(range.year, range.month + 1, 0);
-    const periodEndDate = selectedMonthEnd > todayD ? todayD : selectedMonthEnd;
+    const periodEndDate = rangeBounds.end;
     const inventoryValueAt = (date) => units.filter((u) => {
       const arrived = new Date(u.arrived);
       const soldDate = u.sold ? new Date(u.sold) : null;
@@ -114,53 +132,51 @@
     }).reduce((sum, u) => sum + u.buy, 0);
     const currentInventoryValue = inventoryValueAt(periodEndDate);
     const prevDelta = useMemoD(() => {
-      const cutoff = new Date(range.year, range.month, 1);
-      const prevCutoff = new Date(range.year, range.month - 1, 1);
+      const currentStart = rangeBounds.start;
+      const currentEnd = rangeBounds.end;
+      const prevEnd = dashAddDays(currentStart, -1);
+      const prevStart = dashAddDays(prevEnd, -(rangeBounds.days - 1));
+      const inPrevRange = (dateValue) => {
+        const d = dashDateOnly(dateValue);
+        return d >= prevStart && d <= prevEnd;
+      };
       const prev = sold.filter((s) => {
-        const d = new Date(s.sold);
-        const inRange = d >= prevCutoff && d < cutoff;
         const inCat = catFilter === "all" || s.cat === catFilter;
-        return inRange && inCat;
+        return inPrevRange(s.sold) && inCat;
       });
       const pRev = prev.reduce((s, x) => s + x.sell, 0);
       const pSalesProfit = prev.reduce((s, x) => s + (x.sell - x.buy), 0);
       const pAffiliateIncome = (affiliateIncomes || []).filter((entry) => {
-        const d = new Date(entry.receivedAt);
         const includedByStatus = entry.status !== "pending" || includePendingAffiliateInProfit;
-        return d >= prevCutoff && d < cutoff && includedByStatus;
+        return inPrevRange(entry.receivedAt) && includedByStatus;
       }).reduce((sum, entry) => sum + (+entry.amount || 0), 0);
       const pProfit = pSalesProfit + (includeAffiliateInProfit ? pAffiliateIncome : 0);
-      const prevInventoryValue = inventoryValueAt(new Date(cutoff.getTime() - 864e5));
+      const prevInventoryValue = inventoryValueAt(prevEnd);
       return {
         rev: pRev !== 0 ? (totalRev - pRev) / Math.abs(pRev) * 100 : null,
         profit: pProfit !== 0 ? (totalProfit - pProfit) / Math.abs(pProfit) * 100 : null,
         items: prev.length ? (itemsSold - prev.length) / prev.length * 100 : null,
         inventory: prevInventoryValue !== 0 ? (currentInventoryValue - prevInventoryValue) / Math.abs(prevInventoryValue) * 100 : null
       };
-    }, [sold, range, catFilter, totalRev, totalProfit, itemsSold, currentInventoryValue, units, affiliateIncomes, includeAffiliateInProfit]);
+    }, [sold, rangeBounds, catFilter, totalRev, totalProfit, itemsSold, currentInventoryValue, units, affiliateIncomes, includeAffiliateInProfit, includePendingAffiliateInProfit]);
     const lineData = useMemoD(() => {
-      const startDate = new Date(range.year, range.month, 1);
-      const monthEnd = new Date(range.year, range.month + 1, 0);
-      const chartEnd = monthEnd > todayD ? todayD : monthEnd;
-      const days = chartEnd.getDate();
       const buckets = [];
-      for (let i = 0; i < days; i++) {
-        const d = new Date(startDate);
-        d.setDate(startDate.getDate() + i);
+      for (let i = 0; i < rangeBounds.days; i++) {
+        const d = dashAddDays(rangeBounds.start, i);
         buckets.push({ date: d, rev: 0, salesProfit: 0, affiliate: 0, profit: 0, inventory: inventoryValueAt(d) });
       }
       filtered.forEach((s) => {
-        const sd = new Date(s.sold);
-        const idx = buckets.findIndex((b) => b.date.toDateString() === sd.toDateString());
+        const sd = dashDateOnly(s.sold);
+        const idx = buckets.findIndex((b) => b.date.getTime() === sd.getTime());
         if (idx >= 0) {
           buckets[idx].rev += s.sell;
           buckets[idx].salesProfit += s.sell - s.buy;
         }
       });
       if (includeAffiliateInProfit) {
-        monthlyAffiliateEntries.filter((entry) => entry.status !== "pending" || includePendingAffiliateInProfit).forEach((entry) => {
-          const receivedAt = new Date(entry.receivedAt);
-          const idx = buckets.findIndex((b) => b.date.toDateString() === receivedAt.toDateString());
+        periodAffiliateEntries.filter((entry) => entry.status !== "pending" || includePendingAffiliateInProfit).forEach((entry) => {
+          const receivedAt = dashDateOnly(entry.receivedAt);
+          const idx = buckets.findIndex((b) => b.date.getTime() === receivedAt.getTime());
           if (idx >= 0) buckets[idx].affiliate += +entry.amount || 0;
         });
       }
@@ -175,7 +191,7 @@
         profit: buckets.map((b) => b.profit),
         inventory: buckets.map((b) => b.inventory)
       };
-    }, [filtered, range, units, catFilter, monthlyAffiliateEntries, includeAffiliateInProfit, includePendingAffiliateInProfit]);
+    }, [filtered, rangeBounds, units, catFilter, periodAffiliateEntries, includeAffiliateInProfit, includePendingAffiliateInProfit]);
     const profitByCat = useMemoD(() => {
       const map = {};
       filtered.forEach((s) => {
@@ -190,7 +206,7 @@
         map[s.cat].buy += s.buy;
         map[s.cat].sell += s.sell;
       });
-      return window.CATEGORIES.map((c) => __spreadProps(__spreadValues({}, c), { ratio: map[c.id] ? map[c.id].sell / map[c.id].buy * 100 : null })).filter((c) => c.ratio !== null).sort((a, b) => b.ratio - a.ratio);
+      return window.CATEGORIES.map((c) => ({ ...c, ratio: map[c.id] ? map[c.id].sell / map[c.id].buy * 100 : null })).filter((c) => c.ratio !== null).sort((a, b) => b.ratio - a.ratio);
     }, [filtered]);
     const catCounts = useMemoD(() => {
       const inPeriodSales = sold.filter((s) => inPeriod(new Date(s.sold), range));
@@ -200,6 +216,11 @@
       });
       return m;
     }, [sold, range]);
+    const usedCategoryIds = useMemoD(() => new Set(units.map((unit) => unit.cat)), [units]);
+    const visibleCategories = useMemoD(
+      () => window.CATEGORIES.filter((category) => usedCategoryIds.has(category.id)),
+      [usedCategoryIds]
+    );
     const timelinePoints = useMemoD(() => [
       ...sold.map((s) => ({ date: s.sold })),
       ...(affiliateIncomes || []).map((entry) => ({ date: entry.receivedAt }))
@@ -225,11 +246,12 @@
       });
       return Object.values(map).sort((a, b) => b.revenue - a.revenue || b.qty - a.qty).slice(0, 8);
     }, [filtered]);
-    const slowInventory = useMemoD(() => currentInventory.map((u) => __spreadProps(__spreadValues({}, u), {
+    const slowInventory = useMemoD(() => currentInventory.map((u) => ({
+      ...u,
       daysInStock: Math.max(0, Math.floor((todayD - new Date(u.arrived)) / 864e5))
     })).sort((a, b) => b.daysInStock - a.daysInStock || b.buy - a.buy).slice(0, 8), [currentInventory, today]);
     const recentSales = useMemoD(() => filtered.slice().sort((a, b) => new Date(b.sold) - new Date(a.sold)).slice(0, 8), [filtered]);
-    return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "page-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h1", { className: "page-title" }, /* @__PURE__ */ React.createElement("span", { className: "accent" }), "T\u1ED5ng quan kinh doanh"), /* @__PURE__ */ React.createElement("div", { className: "page-sub" }, "C\u1EADp nh\u1EADt realtime \xB7 ", todayD.toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }))), /* @__PURE__ */ React.createElement("div", { className: "page-controls" }, /* @__PURE__ */ React.createElement(ImportDataButton, { today, onImport: importUnits, disabled: readOnly }), /* @__PURE__ */ React.createElement(ExportDataButton, { units, today }), /* @__PURE__ */ React.createElement(CategoryPicker, { value: catFilter, onChange: setCatFilter, counts: catCounts }), /* @__PURE__ */ React.createElement(DateRangePicker, { value: range, onChange: setRange, dataPoints: timelinePoints, today }))), /* @__PURE__ */ React.createElement("div", { className: "kpi-grid" }, /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "page-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h1", { className: "page-title" }, /* @__PURE__ */ React.createElement("span", { className: "accent" }), "T\u1ED5ng quan kinh doanh"), /* @__PURE__ */ React.createElement("div", { className: "page-sub" }, "C\u1EADp nh\u1EADt realtime \xB7 ", todayD.toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }))), /* @__PURE__ */ React.createElement("div", { className: "page-controls" }, /* @__PURE__ */ React.createElement(ImportDataButton, { today, onImport: importUnits, disabled: readOnly }), /* @__PURE__ */ React.createElement(ExportDataButton, { units, today }), /* @__PURE__ */ React.createElement(CategoryPicker, { value: catFilter, onChange: setCatFilter, counts: catCounts, categories: visibleCategories }), /* @__PURE__ */ React.createElement(DateRangePicker, { value: range, onChange: setRange, dataPoints: timelinePoints, today }))), /* @__PURE__ */ React.createElement("div", { className: "kpi-grid" }, /* @__PURE__ */ React.createElement(
       "div",
       {
         className: "kpi kpi-money-toggle",
@@ -259,7 +281,7 @@
         title: "Qu\u1EA3n l\xFD c\xE1c kho\u1EA3n hoa h\u1ED3ng AFF trong th\xE1ng"
       },
       /* @__PURE__ */ React.createElement("div", { className: "kpi-label" }, "Hoa h\u1ED3ng AFF"),
-      monthlyAffiliateEntries.length > 0 ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: `kpi-value mono ${detailedMode ? "detailed" : ""}` }, fmtAmount(totalAffiliateIncome), /* @__PURE__ */ React.createElement("span", { className: "unit" }, moneyUnit)), /* @__PURE__ */ React.createElement("div", { className: "kpi-delta" }, /* @__PURE__ */ React.createElement("span", { className: "aff-chip paid" }, "\u0110\xE3 tr\u1EA3 ", fmtAmount(paidAffiliateIncome)), /* @__PURE__ */ React.createElement("span", { className: "aff-chip pending" }, "Ch\u1EDD ", fmtAmount(pendingAffiliateIncome)))) : /* @__PURE__ */ React.createElement("button", { type: "button", className: "aff-empty-btn", disabled: readOnly }, "Nh\u1EADp AFF"),
+      periodAffiliateEntries.length > 0 ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: `kpi-value mono ${detailedMode ? "detailed" : ""}` }, fmtAmount(totalAffiliateIncome), /* @__PURE__ */ React.createElement("span", { className: "unit" }, moneyUnit)), /* @__PURE__ */ React.createElement("div", { className: "kpi-delta" }, /* @__PURE__ */ React.createElement("span", { className: "aff-chip paid" }, "\u0110\xE3 tr\u1EA3 ", fmtAmount(paidAffiliateIncome)), /* @__PURE__ */ React.createElement("span", { className: "aff-chip pending" }, "Ch\u1EDD ", fmtAmount(pendingAffiliateIncome)))) : /* @__PURE__ */ React.createElement("button", { type: "button", className: "aff-empty-btn", disabled: readOnly }, "Nh\u1EADp AFF"),
       /* @__PURE__ */ React.createElement("label", { className: `aff-profit-toggle ${includePendingAffiliateInProfit ? "active" : ""}`, onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement(
         "input",
         {
@@ -351,7 +373,7 @@
         totalProfit,
         salesProfit,
         profitLabel,
-        affiliateEntries: monthlyAffiliateEntries,
+        affiliateEntries: periodAffiliateEntries,
         totalAffiliateIncome,
         paidAffiliateIncome,
         pendingAffiliateIncome,
@@ -376,7 +398,7 @@
     ), showAffiliateModal && /* @__PURE__ */ React.createElement(
       AffiliateIncomeModal,
       {
-        entries: monthlyAffiliateEntries,
+        entries: periodAffiliateEntries,
         range,
         rangeLabel,
         today,
@@ -466,11 +488,10 @@
     return /* @__PURE__ */ React.createElement("div", { className: "card analytics-panel" }, /* @__PURE__ */ React.createElement("div", { className: "card-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "card-title" }, title), subtitle && /* @__PURE__ */ React.createElement("div", { className: "card-sub" }, subtitle))), /* @__PURE__ */ React.createElement("div", { className: "card-body" }, children));
   }
   function defaultAffiliateDate(range, today) {
-    const todayD = new Date(today);
-    if (todayD.getFullYear() === range.year && todayD.getMonth() === range.month) {
-      return today;
-    }
-    return `${range.year}-${String(range.month + 1).padStart(2, "0")}-01`;
+    const todayD = dashDateOnly(today);
+    const { start, end } = dashboardRangeBounds(range, todayD);
+    if (todayD >= start && todayD <= end) return dashDateIso(todayD);
+    return dashDateIso(start);
   }
   function AffiliateStatusPill({ status }) {
     const pending = status === "pending";
@@ -487,9 +508,9 @@
     onDelete,
     onClose
   }) {
-    const monthStart = `${range.year}-${String(range.month + 1).padStart(2, "0")}-01`;
-    const monthEndDate = new Date(range.year, range.month + 1, 0);
-    const monthEnd = `${range.year}-${String(range.month + 1).padStart(2, "0")}-${String(monthEndDate.getDate()).padStart(2, "0")}`;
+    const affBounds = dashboardRangeBounds(range, dashDateOnly(today));
+    const monthStart = dashDateIso(affBounds.start);
+    const monthEnd = dashDateIso(affBounds.end);
     const emptyForm = () => ({
       amount: "",
       receivedAt: defaultAffiliateDate(range, today),
@@ -525,7 +546,7 @@
         type: "number",
         min: "0",
         value: form.amount,
-        onChange: (e) => setForm((prev) => __spreadProps(__spreadValues({}, prev), { amount: e.target.value })),
+        onChange: (e) => setForm((prev) => ({ ...prev, amount: e.target.value })),
         disabled: readOnly,
         placeholder: "vd. 1250"
       }
@@ -536,14 +557,14 @@
         value: form.receivedAt,
         min: monthStart,
         max: monthEnd,
-        onChange: (e) => setForm((prev) => __spreadProps(__spreadValues({}, prev), { receivedAt: e.target.value })),
+        onChange: (e) => setForm((prev) => ({ ...prev, receivedAt: e.target.value })),
         disabled: readOnly
       }
     )), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement("label", null, "Tr\u1EA1ng th\xE1i"), /* @__PURE__ */ React.createElement(
       "select",
       {
         value: form.status,
-        onChange: (e) => setForm((prev) => __spreadProps(__spreadValues({}, prev), { status: e.target.value })),
+        onChange: (e) => setForm((prev) => ({ ...prev, status: e.target.value })),
         disabled: readOnly
       },
       /* @__PURE__ */ React.createElement("option", { value: "pending" }, "\u0110ang ch\u1EDD v\u1EC1"),
@@ -552,7 +573,7 @@
       "textarea",
       {
         value: form.note,
-        onChange: (e) => setForm((prev) => __spreadProps(__spreadValues({}, prev), { note: e.target.value })),
+        onChange: (e) => setForm((prev) => ({ ...prev, note: e.target.value })),
         disabled: readOnly,
         placeholder: "vd. TikTok Shop \u0111\u1EE3t 1..."
       }

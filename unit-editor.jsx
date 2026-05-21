@@ -5,6 +5,63 @@ const ADD_NEW_LINE = '__add_new_line__';
 const ADD_NEW_VARIANT = '__add_new_variant__';
 const ADD_NEW_CATEGORY = '__add_new_category__';
 
+function UnitSearchableSelect({ value, selectedLabel, placeholder, searchValue, onSearch, options, onSelect, open, onOpen, onClose, emptyText, autoFocus = false }) {
+  const selected = options.find(option => option.value === value) || (selectedLabel ? { label: selectedLabel } : null);
+  return (
+    <div
+      className="search-select"
+      onBlur={e => {
+        if (!e.currentTarget.contains(e.relatedTarget)) onClose();
+      }}
+    >
+      <button
+        type="button"
+        className={`search-select-trigger ${open ? 'open' : ''}`}
+        onClick={() => open ? onClose() : onOpen()}
+        onKeyDown={e => {
+          if (e.key === 'Escape') onClose();
+        }}
+        autoFocus={autoFocus}
+      >
+        <span>{selected?.label || placeholder}</span>
+        <span className="chev">⌄</span>
+      </button>
+      {open && (
+        <div className="search-select-pop">
+          <input
+            type="text"
+            value={searchValue}
+            onChange={e => onSearch(e.target.value)}
+            placeholder={placeholder}
+            onKeyDown={e => {
+              if (e.key === 'Escape') onClose();
+            }}
+            autoFocus
+          />
+          <div className="search-select-list">
+            {options.length > 0 ? options.map(option => (
+              <button
+                key={option.value}
+                type="button"
+                className={`search-select-item ${option.value === value ? 'selected' : ''}`}
+                onClick={() => {
+                  onSelect(option.value);
+                  onClose();
+                }}
+              >
+                <span>{option.label}</span>
+                {option.meta && <small>{option.meta}</small>}
+              </button>
+            )) : (
+              <div className="search-select-empty">{emptyText}</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function EditUnitModal({
   unit,
   catalogLines,
@@ -32,13 +89,32 @@ function EditUnitModal({
   const [showNewLine, setShowNewLine] = useStateUE(false);
   const [showNewVariant, setShowNewVariant] = useStateUE(false);
   const [showNewCategory, setShowNewCategory] = useStateUE(false);
+  const [showQuickLine, setShowQuickLine] = useStateUE(false);
+  const [showQuickVariant, setShowQuickVariant] = useStateUE(false);
   const [newLineName, setNewLineName] = useStateUE('');
   const [newVariantName, setNewVariantName] = useStateUE('');
   const [newCategoryName, setNewCategoryName] = useStateUE('');
+  const [lineDropdownOpen, setLineDropdownOpen] = useStateUE(false);
+  const [variantDropdownOpen, setVariantDropdownOpen] = useStateUE(false);
+  const [lineSearch, setLineSearch] = useStateUE('');
+  const [variantSearch, setVariantSearch] = useStateUE('');
 
   const set = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
   const selectedLine = catalogLines.find(line => line.id === form.productLineId) || null;
   const selectedVariant = selectedLine?.variants.find(variant => variant.id === form.variantId) || null;
+  const normalizedLineSearch = lineSearch.trim().toLowerCase();
+  const lineOptions = catalogLines
+    .filter(line => !normalizedLineSearch || [line.name, line.brand, window.CATEGORIES.find(category => category.id === line.cat)?.name]
+      .some(value => String(value || '').toLowerCase().includes(normalizedLineSearch)))
+    .map(line => ({
+      value: line.id,
+      label: line.name,
+      meta: window.CATEGORIES.find(category => category.id === line.cat)?.name || '',
+    }));
+  const normalizedVariantSearch = variantSearch.trim().toLowerCase();
+  const variantOptions = (selectedLine?.variants || [])
+    .filter(variant => !normalizedVariantSearch || String(variant.name || '').toLowerCase().includes(normalizedVariantSearch))
+    .map(variant => ({ value: variant.id, label: variant.name }));
   const selectLine = (lineId) => {
     const line = catalogLines.find(item => item.id === lineId);
     setForm(prev => ({
@@ -47,6 +123,7 @@ function EditUnitModal({
       variantId: line?.variants?.[0]?.id || '',
       cat: line?.cat || prev.cat,
     }));
+    setVariantSearch('');
   };
   const handleLineChange = (value) => {
     if (value === ADD_NEW_LINE) {
@@ -146,36 +223,49 @@ function EditUnitModal({
 
           <div className="field-row">
             <div className="field">
-              <label>Dòng sản phẩm</label>
-              <select value={form.productLineId} onChange={e => handleLineChange(e.target.value)} autoFocus>
-                {catalogLines.map(line => <option key={line.id} value={line.id}>{line.name}</option>)}
-                <option value={ADD_NEW_LINE}>+ Thêm dòng sản phẩm mới</option>
-              </select>
-              {showNewLine && (
-                <InlineCreateRow
-                  value={newLineName}
-                  onChange={setNewLineName}
-                  onCreate={createLine}
-                  placeholder="Tên dòng sản phẩm mới"
-                />
-              )}
+              <label className="field-label-actions">
+                Dòng sản phẩm
+                <button type="button" onClick={() => setShowQuickLine(true)}>+ tạo nhanh</button>
+              </label>
+              <UnitSearchableSelect
+                value={form.productLineId}
+                selectedLabel={selectedLine?.name}
+                placeholder="Tìm dòng sản phẩm theo tên..."
+                searchValue={lineSearch}
+                onSearch={setLineSearch}
+                options={lineOptions}
+                onSelect={selectLine}
+                open={lineDropdownOpen}
+                onOpen={() => {
+                  setLineDropdownOpen(true);
+                  setVariantDropdownOpen(false);
+                }}
+                onClose={() => setLineDropdownOpen(false)}
+                emptyText="Không tìm thấy dòng sản phẩm phù hợp"
+                autoFocus
+              />
             </div>
             <div className="field">
-              <label>Phân loại</label>
-              <select value={form.variantId} onChange={e => handleVariantChange(e.target.value)}>
-                {(selectedLine?.variants || []).map(variant => (
-                  <option key={variant.id} value={variant.id}>{variant.name}</option>
-                ))}
-                <option value={ADD_NEW_VARIANT}>+ Thêm phân loại mới</option>
-              </select>
-              {showNewVariant && (
-                <InlineCreateRow
-                  value={newVariantName}
-                  onChange={setNewVariantName}
-                  onCreate={createVariant}
-                  placeholder="Tên phân loại mới"
-                />
-              )}
+              <label className="field-label-actions">
+                Phân loại
+                <button type="button" onClick={() => setShowQuickVariant(true)} disabled={!selectedLine}>+ tạo nhanh</button>
+              </label>
+              <UnitSearchableSelect
+                value={form.variantId}
+                selectedLabel={selectedVariant?.name}
+                placeholder="Tìm phân loại..."
+                searchValue={variantSearch}
+                onSearch={setVariantSearch}
+                options={variantOptions}
+                onSelect={value => set('variantId', value)}
+                open={variantDropdownOpen}
+                onOpen={() => {
+                  setVariantDropdownOpen(true);
+                  setLineDropdownOpen(false);
+                }}
+                onClose={() => setVariantDropdownOpen(false)}
+                emptyText="Không tìm thấy phân loại phù hợp"
+              />
             </div>
           </div>
 
@@ -261,6 +351,77 @@ function EditUnitModal({
             LƯU THAY ĐỔI
           </button>
         </div>
+      </div>
+      {showQuickLine && (
+        <EditQuickCreateLineModal
+          defaultCategoryId={form.cat}
+          onClose={() => setShowQuickLine(false)}
+          onSave={({ name, cat, variant }) => {
+            const line = onCreateLine?.(name, cat);
+            if (!line) return;
+            const createdVariant = variant.trim() && variant.trim() !== 'Mặc định'
+              ? onCreateVariant?.(line, variant)
+              : line.variants?.[0];
+            setForm(prev => ({
+              ...prev,
+              productLineId: line.id,
+              variantId: createdVariant?.id || line.variants?.[0]?.id || '',
+              cat: line.cat,
+            }));
+            setShowQuickLine(false);
+          }}
+        />
+      )}
+      {showQuickVariant && selectedLine && (
+        <EditQuickCreateVariantModal
+          line={selectedLine}
+          onClose={() => setShowQuickVariant(false)}
+          onSave={(name) => {
+            const variant = onCreateVariant?.(selectedLine, name);
+            if (!variant) return;
+            set('variantId', variant.id);
+            setShowQuickVariant(false);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function EditQuickCreateLineModal({ defaultCategoryId, onClose, onSave }) {
+  const [form, setForm] = useStateUE({ name: '', cat: defaultCategoryId || window.CATEGORIES[0]?.id || '', variant: '' });
+  const valid = form.name.trim() && form.cat;
+  return (
+    <div className="modal-bg nested" onClick={onClose}>
+      <div className="modal quick-catalog-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-head">
+          <div className="modal-title"><span className="accent"></span>TẠO NHANH DÒNG SẢN PHẨM</div>
+          <button className="close-x" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">
+          <div className="field"><label>Tên dòng sản phẩm</label><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} autoFocus /></div>
+          <div className="field-row">
+            <div className="field"><label>Danh mục</label><select value={form.cat} onChange={e => setForm({ ...form, cat: e.target.value })}>{window.CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+            <div className="field"><label>Phân loại đầu tiên</label><input value={form.variant} onChange={e => setForm({ ...form, variant: e.target.value })} placeholder="để trống = Mặc định" /></div>
+          </div>
+        </div>
+        <div className="modal-foot"><button className="ctl ghost" onClick={onClose}>HUỶ</button><button className="ctl primary" disabled={!valid} onClick={() => onSave(form)}>TẠO</button></div>
+      </div>
+    </div>
+  );
+}
+
+function EditQuickCreateVariantModal({ line, onClose, onSave }) {
+  const [name, setName] = useStateUE('');
+  return (
+    <div className="modal-bg nested" onClick={onClose}>
+      <div className="modal quick-catalog-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-head"><div className="modal-title"><span className="accent"></span>TẠO NHANH PHÂN LOẠI</div><button className="close-x" onClick={onClose}>×</button></div>
+        <div className="modal-body">
+          <div className="unit-summary" style={{ marginBottom: 16 }}><div className="row"><span className="lbl">Dòng sản phẩm</span><span>{line.name}</span></div></div>
+          <div className="field"><label>Tên phân loại</label><input value={name} onChange={e => setName(e.target.value)} autoFocus /></div>
+        </div>
+        <div className="modal-foot"><button className="ctl ghost" onClick={onClose}>HUỶ</button><button className="ctl primary" disabled={!name.trim()} onClick={() => onSave(name)}>TẠO</button></div>
       </div>
     </div>
   );

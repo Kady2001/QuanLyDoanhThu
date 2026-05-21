@@ -1,20 +1,4 @@
 (() => {
-  var __defProp = Object.defineProperty;
-  var __getOwnPropSymbols = Object.getOwnPropertySymbols;
-  var __hasOwnProp = Object.prototype.hasOwnProperty;
-  var __propIsEnum = Object.prototype.propertyIsEnumerable;
-  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-  var __spreadValues = (a, b) => {
-    for (var prop in b || (b = {}))
-      if (__hasOwnProp.call(b, prop))
-        __defNormalProp(a, prop, b[prop]);
-    if (__getOwnPropSymbols)
-      for (var prop of __getOwnPropSymbols(b)) {
-        if (__propIsEnum.call(b, prop))
-          __defNormalProp(a, prop, b[prop]);
-      }
-    return a;
-  };
   const { useState: useStateImp } = React;
   const IMPORT_SCHEMA = [
     { key: "name", label: "ten_san_pham", required: true, note: "T\xEAn s\u1EA3n ph\u1EA9m" },
@@ -55,7 +39,7 @@
     return map;
   }
   function normalizeText(value) {
-    return String(value != null ? value : "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s-]/g, "").replace(/\s+/g, " ");
+    return String(value ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s-]/g, "").replace(/\s+/g, " ");
   }
   function normalizeHeader(value) {
     return normalizeText(value).replace(/[\s-]+/g, "_");
@@ -84,7 +68,7 @@
       const date = new Date(excelEpoch.getTime() + value * 864e5);
       if (!Number.isNaN(date.getTime())) return formatIsoDate(date);
     }
-    const raw = String(value != null ? value : "").trim();
+    const raw = String(value ?? "").trim();
     if (!raw) {
       warnings.push(`${label} tr\u1ED1ng \u2192 d\xF9ng ${fallback}`);
       return fallback;
@@ -152,12 +136,11 @@
     const warnings = [];
     const errors = [];
     rawRows.forEach((raw, index) => {
-      var _a, _b, _c;
       const rowNumber = index + 2;
       const rowWarnings = [];
-      const hasAnyValue = Object.values(raw).some((v) => String(v != null ? v : "").trim() !== "");
+      const hasAnyValue = Object.values(raw).some((v) => String(v ?? "").trim() !== "");
       if (!hasAnyValue) return;
-      const name = String((_a = raw.name) != null ? _a : "").trim();
+      const name = String(raw.name ?? "").trim();
       const cat = normalizeCategory(raw.cat);
       const buy = parseMoneyValue(raw.buy, rowWarnings, "gi\xE1 mua");
       const status = normalizeStatus(raw.status, raw);
@@ -188,16 +171,17 @@
         }
       }
       for (let i = 0; i < quantity; i++) {
-        validRows.push(__spreadValues({
+        validRows.push({
           name,
           cat,
-          variant: String((_b = raw.variant) != null ? _b : "").trim(),
+          variant: String(raw.variant ?? "").trim(),
           buy,
           expectedSell,
           arrived,
-          note: String((_c = raw.note) != null ? _c : "").trim(),
-          status
-        }, status === "sold" ? { sell, sold } : {}));
+          note: String(raw.note ?? "").trim(),
+          status,
+          ...status === "sold" ? { sell, sold } : {}
+        });
       }
       rowWarnings.forEach((w) => warnings.push(`D\xF2ng ${rowNumber}: ${w}`));
     });
@@ -341,10 +325,7 @@
       {
         type: "file",
         accept: ".xlsx,.xls,.csv",
-        onChange: (e) => {
-          var _a;
-          return handleFile((_a = e.target.files) == null ? void 0 : _a[0]);
-        }
+        onChange: (e) => handleFile(e.target.files?.[0])
       }
     ), /* @__PURE__ */ React.createElement("span", { className: "import-drop-main" }, busy ? "\u0110ang \u0111\u1ECDc file..." : "Ch\u1ECDn file Excel / CSV \u0111\u1EC3 nh\u1EADp"), /* @__PURE__ */ React.createElement("span", { className: "import-drop-sub" }, fileName || "H\u1ED7 tr\u1EE3 .xlsx, .xls, .csv")), /* @__PURE__ */ React.createElement("label", { className: `import-replace-option ${replaceExisting ? "active" : ""}` }, /* @__PURE__ */ React.createElement(
       "input",
@@ -366,7 +347,7 @@
         style: { opacity: canImport ? 1 : 0.5, cursor: canImport ? "pointer" : "not-allowed" }
       },
       "NH\u1EACP ",
-      (result == null ? void 0 : result.units.length) || 0,
+      result?.units.length || 0,
       " M\xD3N"
     ))));
   }

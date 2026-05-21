@@ -72,13 +72,29 @@ function attachCatalogRefs(rows, catalogLines) {
   });
 }
 
-function Catalog({ productLines, units, onAddLine, onAddVariant, onUpdateLine, onUpdateVariant, readOnly = false }) {
+function Catalog({
+  productLines,
+  units,
+  onAddLine,
+  onAddVariant,
+  onUpdateLine,
+  onUpdateVariant,
+  onDeleteLine,
+  onDeleteVariant,
+  readOnly = false,
+}) {
   const catalogLines = useMemoC(() => mergeCatalogWithUnits(productLines, units), [productLines, units]);
+  const usedCategoryIds = useMemoC(() => new Set(units.map(unit => unit.cat)), [units]);
+  const visibleCategories = useMemoC(
+    () => window.CATEGORIES.filter(category => usedCategoryIds.has(category.id)),
+    [usedCategoryIds]
+  );
   const [cat, setCat] = useStateC('all');
   const [showLineForm, setShowLineForm] = useStateC(false);
   const [variantTarget, setVariantTarget] = useStateC(null);
   const [editingLine, setEditingLine] = useStateC(null);
   const [editingVariant, setEditingVariant] = useStateC(null);
+  const [editMode, setEditMode] = useStateC(false);
 
   const visibleLines = catalogLines.filter(line => cat === 'all' || line.cat === cat);
 
@@ -92,6 +108,10 @@ function Catalog({ productLines, units, onAddLine, onAddVariant, onUpdateLine, o
           </div>
         </div>
         <div className="page-controls">
+          <label className={`catalog-edit-toggle ${editMode ? 'active' : ''}`}>
+            <input type="checkbox" checked={editMode} onChange={e => setEditMode(e.target.checked)} />
+            EDIT MODE
+          </label>
           <button className="ctl primary" onClick={() => setShowLineForm(true)} disabled={readOnly}>+ THÊM DÒNG SẢN PHẨM</button>
         </div>
       </div>
@@ -100,7 +120,7 @@ function Catalog({ productLines, units, onAddLine, onAddVariant, onUpdateLine, o
         <button className={`chip ${cat === 'all' ? 'active' : ''}`} onClick={() => setCat('all')}>
           TẤT CẢ
         </button>
-        {window.CATEGORIES.map(c => (
+        {visibleCategories.map(c => (
           <button key={c.id} className={`chip ${cat === c.id ? 'active' : ''}`} onClick={() => setCat(c.id)}>
             <i style={{ width: 7, height: 7, background: c.color, display: 'inline-block' }}></i>
             {c.name.toUpperCase()}
@@ -124,6 +144,15 @@ function Catalog({ productLines, units, onAddLine, onAddVariant, onUpdateLine, o
                 <div className="catalog-card-actions">
                   <button className="ctl ghost sm" onClick={() => setEditingLine(line)} disabled={readOnly}>SỬA</button>
                   <button className="ctl ghost sm" onClick={() => setVariantTarget(line)} disabled={readOnly}>+ PHÂN LOẠI</button>
+                  {editMode && (
+                    <button
+                      className="ctl danger sm"
+                      onClick={() => window.confirm(`X\u00f3a d\u00f2ng s\u1ea3n ph\u1ea9m "${line.name}"?`) && onDeleteLine(line)}
+                      disabled={readOnly}
+                    >
+                      {'X\u00d3A'}
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="catalog-variants">
@@ -139,6 +168,15 @@ function Catalog({ productLines, units, onAddLine, onAddVariant, onUpdateLine, o
                       >
                         SỬA
                       </button>
+                      {editMode && (
+                        <button
+                          className="ctl danger sm"
+                          onClick={() => window.confirm(`X\u00f3a ph\u00e2n lo\u1ea1i "${v.name}"?`) && onDeleteVariant(line, v)}
+                          disabled={readOnly}
+                        >
+                          {'X\u00d3A'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

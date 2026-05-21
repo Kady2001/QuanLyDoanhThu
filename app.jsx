@@ -104,16 +104,16 @@ function loadProductLines() {
     const saved = localStorage.getItem('nexus_gear_product_lines');
     const parsed = saved ? JSON.parse(saved) : [];
     const existing = Array.isArray(parsed) ? parsed : [];
-    const byId = new Map(existing.map(line => [line.id, line]));
-    window.INITIAL_PRODUCT_LINES.forEach(line => {
-      if (!byId.has(line.id)) {
-        byId.set(line.id, {
-          ...line,
-          variants: (line.variants || []).map(variant => ({ ...variant })),
-        });
-      }
-    });
-    return [...byId.values()];
+    if (existing.length) {
+      return existing.map(line => ({
+        ...line,
+        variants: (line.variants || []).map(variant => ({ ...variant })),
+      }));
+    }
+    return window.INITIAL_PRODUCT_LINES.map(line => ({
+      ...line,
+      variants: (line.variants || []).map(variant => ({ ...variant })),
+    }));
   } catch (e) {
     console.error('Failed to load product lines from localStorage:', e);
     return window.INITIAL_PRODUCT_LINES;
@@ -126,13 +126,8 @@ function loadCategories() {
     const saved = localStorage.getItem('nexus_gear_categories');
     const parsed = saved ? JSON.parse(saved) : [];
     const existing = Array.isArray(parsed) ? parsed : [];
-    const byId = new Map(initial.map(category => [category.id, category]));
-    existing.forEach(category => {
-      if (category?.id && category?.name) {
-        byId.set(category.id, { ...category });
-      }
-    });
-    return [...byId.values()];
+    const validExisting = existing.filter(category => category?.id && category?.name);
+    return validExisting.length ? validExisting.map(category => ({ ...category })) : initial;
   } catch (e) {
     console.error('Failed to load categories from localStorage:', e);
     return (window.INITIAL_CATEGORIES || window.CATEGORIES || []).map(category => ({ ...category }));
@@ -142,26 +137,14 @@ function loadCategories() {
 function loadUnits() {
   try {
     const saved = localStorage.getItem('nexus_gear_units');
-    const parsed = saved ? JSON.parse(saved) : window.INITIAL_UNITS;
-    const rows = Array.isArray(parsed) ? parsed : window.INITIAL_UNITS;
-    const seededMonitorSamples = localStorage.getItem('nexus_gear_monitor_seed_v1') === '1';
-    const monitorSamples = window.INITIAL_UNITS.filter(unit => unit.cat === 'monitor');
-    const alreadyHasMonitorUnits = rows.some(unit => unit.cat === 'monitor');
-
-    if (saved && !seededMonitorSamples) {
-      localStorage.setItem('nexus_gear_monitor_seed_v1', '1');
-      if (!alreadyHasMonitorUnits) {
-        return ensureTransactionCodes([
-          ...rows,
-          ...monitorSamples.map(unit => ({ ...unit })),
-        ]);
-      }
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
     }
-
-    return ensureTransactionCodes(rows);
+    return ensureTransactionCodes(window.INITIAL_UNITS.map(unit => ({ ...unit })));
   } catch (e) {
     console.error('Failed to load units from localStorage:', e);
-    return ensureTransactionCodes(window.INITIAL_UNITS);
+    return ensureTransactionCodes(window.INITIAL_UNITS.map(unit => ({ ...unit })));
   }
 }
 
@@ -173,7 +156,7 @@ function createSnapshot(units, productLines, categories, affiliateIncomes, dashb
     kind,
     createdAt,
     tab,
-    units: ensureTransactionCodes(units).map(u => ({ ...u })),
+    units: units.map(u => ({ ...u })),
     productLines: productLines.map(line => ({ ...line, variants: (line.variants || []).map(v => ({ ...v })) })),
     categories: categories.map(category => ({ ...category })),
     affiliateIncomes: normalizeAffiliateIncomes(affiliateIncomes).map(entry => ({ ...entry })),
@@ -211,6 +194,31 @@ function makeUniqueCatalogId(base, existingIds, fallback) {
   return `${safeBase}-${index}`;
 }
 
+
+function capitalizeWordInitials(value) {
+  return String(value || '').replace(/(^|\s)(\S)/gu, (match, space, firstChar) => `${space}${firstChar.toLocaleUpperCase('vi-VN')}`);
+}
+
+function normalizeUnitText(unit) {
+  return {
+    ...unit,
+    name: capitalizeWordInitials(unit.name),
+    variant: capitalizeWordInitials(unit.variant),
+    note: capitalizeWordInitials(unit.note),
+  };
+}
+
+function normalizeProductLineText(line) {
+  return {
+    ...line,
+    name: capitalizeWordInitials(line.name),
+    variants: (line.variants || []).map(variant => ({
+      ...variant,
+      name: capitalizeWordInitials(variant.name),
+    })),
+  };
+}
+
 const EXTRA_CATEGORY_COLORS = [
   '#0ea5e9',
   '#8b5cf6',
@@ -223,6 +231,45 @@ const EXTRA_CATEGORY_COLORS = [
 
 const SHARED_POLL_MS = 2500;
 const LOCK_HEARTBEAT_MS = 10000;
+
+const UNIT_HISTORY_FIELDS = [
+  { key: 'productLineId', label: 'D\u00f2ng s\u1ea3n ph\u1ea9m' },
+  { key: 'variantId', label: 'Ph\u00e2n lo\u1ea1i' },
+  { key: 'name', label: 'T\u00ean s\u1ea3n ph\u1ea9m' },
+  { key: 'cat', label: 'Danh m\u1ee5c' },
+  { key: 'variant', label: 'T\u00ean ph\u00e2n lo\u1ea1i' },
+  { key: 'buy', label: 'Gi\u00e1 mua' },
+  { key: 'expectedSell', label: 'Gi\u00e1 b\u00e1n d\u1ef1 ki\u1ebfn' },
+  { key: 'arrived', label: 'Ng\u00e0y nh\u1eadp' },
+  { key: 'status', label: 'Tr\u1ea1ng th\u00e1i' },
+  { key: 'sell', label: 'Gi\u00e1 b\u00e1n th\u1ef1c t\u1ebf' },
+  { key: 'sold', label: 'Ng\u00e0y b\u00e1n' },
+  { key: 'note', label: 'Ghi ch\u00fa' },
+];
+
+function unitHistoryValue(value) {
+  if (value === undefined || value === null || value === '') return '\u2014';
+  if (value === 'in_stock') return 'T\u1ed3n kho';
+  if (value === 'sold') return '\u0110\u00e3 b\u00e1n';
+  return String(value);
+}
+
+function buildUnitHistoryEntries(before, after, action, changedAt = new Date().toISOString()) {
+  return UNIT_HISTORY_FIELDS
+    .filter(field => before?.[field.key] !== after?.[field.key])
+    .map(field => ({
+      id: `hist_${Date.now()}_${field.key}_${Math.random().toString(36).slice(2, 7)}`,
+      unitId: after.id,
+      transactionCode: after.transactionCode,
+      productName: after.name,
+      action,
+      field: field.key,
+      fieldLabel: field.label,
+      before: unitHistoryValue(before?.[field.key]),
+      after: unitHistoryValue(after?.[field.key]),
+      changedAt,
+    }));
+}
 
 function getOrCreateClientId() {
   try {
@@ -243,7 +290,7 @@ function makeClientName(clientId) {
 
 function buildSharedState(units, productLines, categories, affiliateIncomes, dashboardSettings, snapshots) {
   return {
-    units: ensureTransactionCodes(units).map(unit => ({ ...unit })),
+    units: units.map(unit => ({ ...unit })),
     productLines: productLines.map(line => cloneProductLine(line)),
     categories: categories.map(category => ({ ...category })),
     affiliateIncomes: normalizeAffiliateIncomes(affiliateIncomes).map(entry => ({ ...entry })),
@@ -252,7 +299,7 @@ function buildSharedState(units, productLines, categories, affiliateIncomes, das
     },
     snapshots: snapshots.map(snapshot => ({
       ...snapshot,
-      units: ensureTransactionCodes(snapshot.units || []).map(unit => ({ ...unit })),
+      units: (snapshot.units || []).map(unit => ({ ...unit })),
       productLines: (snapshot.productLines || []).map(line => cloneProductLine(line)),
       categories: (snapshot.categories || []).map(category => ({ ...category })),
       affiliateIncomes: normalizeAffiliateIncomes(snapshot.affiliateIncomes || []).map(entry => ({ ...entry })),
@@ -300,12 +347,18 @@ function App() {
   const [syncReady, setSyncReady] = useStateA(false);
   const [serverVersion, setServerVersion] = useStateA(0);
   const [editLock, setEditLock] = useStateA({ owned: false, lock: null });
+  const [unitChangeHistory, setUnitChangeHistory] = useStateA([]);
+  const [showUnitHistory, setShowUnitHistory] = useStateA(false);
+  const historyStartedAtRef = useRefA(new Date().toISOString());
   const clientIdRef = useRefA(getOrCreateClientId());
   const clientNameRef = useRefA(makeClientName(clientIdRef.current));
   const suppressRemoteSaveRef = useRefA(false);
   const saveTimerRef = useRefA(null);
   const serverVersionRef = useRefA(0);
+  const localSaveReadyRef = useRefA({ units: false, categories: false, productLines: false, affiliateIncomes: false, dashboardSettings: false, snapshots: false });
+  const userDataDirtyRef = useRefA(false);
   window.CATEGORIES = categories;
+  const markUserDataChanged = () => { userDataDirtyRef.current = true; };
 
   // Load session on mount
   useEffectA(() => {
@@ -341,8 +394,8 @@ function App() {
   const applySharedPayload = (payload) => {
     if (!payload?.state) return;
     suppressRemoteSaveRef.current = true;
-    setUnits(ensureTransactionCodes(payload.state.units || []));
-    setProductLines(payload.state.productLines || []);
+    setUnits((payload.state.units || []).map(unit => ({ ...unit })));
+    setProductLines((payload.state.productLines || []).map(line => cloneProductLine(line)));
     setCategories(payload.state.categories?.length ? payload.state.categories : loadCategories());
     setAffiliateIncomes(normalizeAffiliateIncomes(payload.state.affiliateIncomes || []));
     setDashboardSettings({
@@ -457,6 +510,10 @@ function App() {
 
   // Save units to localStorage whenever they change
   useEffectA(() => {
+    if (!localSaveReadyRef.current.units) {
+      localSaveReadyRef.current.units = true;
+      return;
+    }
     try {
       localStorage.setItem('nexus_gear_units', JSON.stringify(units));
     } catch (e) {
@@ -465,6 +522,10 @@ function App() {
   }, [units]);
 
   useEffectA(() => {
+    if (!localSaveReadyRef.current.categories) {
+      localSaveReadyRef.current.categories = true;
+      return;
+    }
     try {
       localStorage.setItem('nexus_gear_categories', JSON.stringify(categories));
     } catch (e) {
@@ -473,6 +534,10 @@ function App() {
   }, [categories]);
 
   useEffectA(() => {
+    if (!localSaveReadyRef.current.productLines) {
+      localSaveReadyRef.current.productLines = true;
+      return;
+    }
     try {
       localStorage.setItem('nexus_gear_product_lines', JSON.stringify(productLines));
     } catch (e) {
@@ -481,6 +546,10 @@ function App() {
   }, [productLines]);
 
   useEffectA(() => {
+    if (!localSaveReadyRef.current.affiliateIncomes) {
+      localSaveReadyRef.current.affiliateIncomes = true;
+      return;
+    }
     try {
       localStorage.setItem('nexus_gear_affiliate_incomes', JSON.stringify(affiliateIncomes));
     } catch (e) {
@@ -489,6 +558,10 @@ function App() {
   }, [affiliateIncomes]);
 
   useEffectA(() => {
+    if (!localSaveReadyRef.current.dashboardSettings) {
+      localSaveReadyRef.current.dashboardSettings = true;
+      return;
+    }
     try {
       localStorage.setItem('nexus_gear_dashboard_settings', JSON.stringify(dashboardSettings));
     } catch (e) {
@@ -498,6 +571,10 @@ function App() {
 
   // Save snapshot history to localStorage whenever it changes.
   useEffectA(() => {
+    if (!localSaveReadyRef.current.snapshots) {
+      localSaveReadyRef.current.snapshots = true;
+      return;
+    }
     try {
       localStorage.setItem('nexus_gear_snapshots', JSON.stringify(snapshots));
     } catch (e) {
@@ -512,6 +589,7 @@ function App() {
       suppressRemoteSaveRef.current = false;
       return;
     }
+    if (!userDataDirtyRef.current) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(async () => {
       try {
@@ -526,6 +604,7 @@ function App() {
         });
         const payload = await res.json();
         if (res.ok) {
+          userDataDirtyRef.current = false;
           serverVersionRef.current = payload.version || serverVersionRef.current;
           setServerVersion(payload.version);
           return;
@@ -671,7 +750,10 @@ function App() {
 
   const canEditSharedData = syncMode === 'shared' && editLock.owned;
   const ensureCanEdit = () => {
-    if (canEditSharedData) return true;
+    if (canEditSharedData) {
+      markUserDataChanged();
+      return true;
+    }
     pushToast({
       type: 'warning',
       title: syncMode === 'offline' ? 'Chưa có máy chủ chung' : 'Chế độ chỉ xem',
@@ -717,37 +799,65 @@ function App() {
   // Sell an in-stock unit — moves it to sold list
   const sellUnit = (id, sell, soldDate, note) => {
     if (!ensureCanEdit()) return;
-    setUnits(prev => prev.map(u =>
-      u.id === id
-        ? { ...u, status: 'sold', sell: +sell, sold: soldDate, note: note ?? u.note }
-        : u
-    ));
+    setUnits(prev => prev.map(u => {
+      if (u.id !== id) return u;
+      const next = { ...u, status: 'sold', sell: +sell, sold: soldDate, note: capitalizeWordInitials(note ?? u.note) };
+      appendUnitHistory(buildUnitHistoryEntries(u, next, 'Ghi\u0020nh\u1eadn\u0020b\u00e1n\u0020h\u00e0ng'));
+      return next;
+    }));
   };
 
-  // Cancel a sale — push back to in-stock
-  const cancelSale = (id) => {
+  const appendUnitHistory = (entries) => {
+    if (!entries.length) return;
+    setUnitChangeHistory(prev => {
+      const next = [...prev];
+      entries.forEach(entry => {
+        const last = next[next.length - 1];
+        const nearSameEdit = last
+          && last.transactionCode === entry.transactionCode
+          && last.field === entry.field
+          && new Date(entry.changedAt) - new Date(last.changedAt) < 1500;
+        if (nearSameEdit) {
+          next[next.length - 1] = { ...entry, id: last.id, before: last.before };
+        } else {
+          next.push(entry);
+        }
+      });
+      return next;
+    });
+  };
+
+  // Cancel a sale ? push back to in-stock
+  const cancelSale = (id, action = 'Hu\u1ef7\u0020giao\u0020d\u1ecbch\u0020b\u00e1n') => {
     if (!ensureCanEdit()) return;
-    setUnits(prev => prev.map(u =>
-      u.id === id
-        ? { ...u, status: 'in_stock', sell: undefined, sold: undefined }
-        : u
-    ));
+    setUnits(prev => prev.map(u => {
+      if (u.id !== id) return u;
+      const next = { ...u, status: 'in_stock', sell: undefined, sold: undefined };
+      appendUnitHistory(buildUnitHistoryEntries(u, next, action));
+      return next;
+    }));
   };
 
   // Update note on any unit
-  const updateNote = (id, note) => {
+  const updateNote = (id, note, action = 'S\u1eeda\u0020ghi\u0020ch\u00fa') => {
     if (!canEditSharedData) return;
-    setUnits(prev => prev.map(u => u.id === id ? { ...u, note } : u));
+    setUnits(prev => prev.map(u => {
+      if (u.id !== id) return u;
+      const next = { ...u, note: capitalizeWordInitials(note) };
+      appendUnitHistory(buildUnitHistoryEntries(u, next, action));
+      return next;
+    }));
   };
 
   // Update any mutable unit field while preserving identity fields.
-  const updateUnit = (id, patch) => {
+  const updateUnit = (id, patch, action = 'S\u1eeda\u0020giao\u0020d\u1ecbch') => {
     if (!ensureCanEdit()) return;
     setUnits(prev => prev.map(u => {
       if (u.id !== id) return u;
       const next = {
         ...u,
         ...patch,
+        note: patch.note === undefined ? u.note : capitalizeWordInitials(patch.note),
         id: u.id,
         transactionCode: u.transactionCode,
       };
@@ -755,6 +865,7 @@ function App() {
         delete next.sell;
         delete next.sold;
       }
+      appendUnitHistory(buildUnitHistoryEntries(u, next, action));
       return next;
     }));
   };
@@ -764,8 +875,12 @@ function App() {
     if (!ensureCanEdit()) return;
     const quantity = Math.max(1, Math.floor(+u.quantity || 1));
     const { quantity: _quantity, ...base } = u;
-    const rows = Array.from({ length: quantity }, () => ({ ...base, status: 'in_stock' }));
-    setUnits(prev => [...buildUnitsWithCodes(rows, prev, 'manual'), ...prev]);
+    const rows = Array.from({ length: quantity }, () => normalizeUnitText({ ...base, status: 'in_stock' }));
+    setUnits(prev => {
+      const createdRows = buildUnitsWithCodes(rows, prev, 'manual');
+      appendUnitHistory(createdRows.flatMap(unit => buildUnitHistoryEntries({}, unit, 'Nh\u1eadp\u0020h\u00e0ng\u0020m\u1edbi')));
+      return [...createdRows, ...prev];
+    });
   };
 
   // Import normalized units from Excel / CSV into the shared data source.
@@ -773,7 +888,7 @@ function App() {
   const importUnits = (rows, options = {}) => {
     if (!ensureCanEdit()) return;
     const catalogLines = window.mergeCatalogWithUnits(productLines, units);
-    const normalizedRows = window.attachCatalogRefs(rows, catalogLines);
+    const normalizedRows = window.attachCatalogRefs(rows, catalogLines).map(unit => normalizeUnitText(unit));
     setUnits(prev => options.replaceExisting
       ? buildUnitsWithCodes(normalizedRows, [], 'imp')
       : [...buildUnitsWithCodes(normalizedRows, prev, 'imp'), ...prev]
@@ -856,9 +971,9 @@ function App() {
       'auto'
     );
     setSnapshots(prev => [safetyCopy, ...prev]);
-    setUnits(ensureTransactionCodes(snapshot.units || []));
+    setUnits((snapshot.units || []).map(unit => ({ ...unit })));
     setCategories(snapshot.categories || categories);
-    setProductLines(snapshot.productLines || productLines);
+    setProductLines((snapshot.productLines || productLines).map(line => cloneProductLine(line)));
     setAffiliateIncomes(normalizeAffiliateIncomes(snapshot.affiliateIncomes || []));
     setDashboardSettings({
       includePendingAffiliateInProfit: Boolean(snapshot.dashboardSettings?.includePendingAffiliateInProfit),
@@ -911,6 +1026,46 @@ function App() {
     });
   };
 
+  const deleteProductLine = (line) => {
+    if (!ensureCanEdit()) return;
+    const hasTransactions = units.some(unit =>
+      unit.productLineId === line.id || (unit.name === line.name && unit.cat === line.cat)
+    );
+    if (hasTransactions) {
+      pushToast({
+        type: 'warning',
+        title: 'Chưa thể xóa dòng sản phẩm',
+        message: 'Dòng này đã có giao dịch trong kho hoặc lịch sử bán.',
+      });
+      return;
+    }
+    setProductLines(prev => prev.filter(item => item.id !== line.id));
+  };
+
+  const deleteProductVariant = (line, variant) => {
+    if (!ensureCanEdit()) return;
+    const hasTransactions = units.some(unit => {
+      const belongsToLine = unit.productLineId === line.id
+        || (unit.name === line.name && unit.cat === line.cat);
+      const belongsToVariant = unit.variantId === variant.id
+        || (belongsToLine && (unit.variant || '\u004d\u1eb7\u0063 \u0111\u1ecb\u006e\u0068') === variant.name);
+      return belongsToLine && belongsToVariant;
+    });
+    if (hasTransactions) {
+      pushToast({
+        type: 'warning',
+        title: 'Chưa thể xóa phân loại',
+        message: 'Phân loại này đã có giao dịch trong kho hoặc lịch sử bán.',
+      });
+      return;
+    }
+    const updatedLine = {
+      ...line,
+      variants: (line.variants || []).filter(item => item.id !== variant.id),
+    };
+    setProductLines(prev => upsertProductLine(prev, updatedLine));
+  };
+
   const createCategoryFromName = (name) => {
     if (!ensureCanEdit()) return null;
     const trimmedName = String(name || '').trim();
@@ -933,7 +1088,7 @@ function App() {
 
   const createProductLineFromName = (name, catId) => {
     if (!ensureCanEdit()) return null;
-    const trimmedName = String(name || '').trim();
+    const trimmedName = capitalizeWordInitials(String(name || '').trim());
     if (!trimmedName) return null;
     const safeCat = categories.some(category => category.id === catId)
       ? catId
@@ -960,7 +1115,7 @@ function App() {
 
   const createProductVariantFromName = (line, name) => {
     if (!ensureCanEdit()) return null;
-    const trimmedName = String(name || '').trim();
+    const trimmedName = capitalizeWordInitials(String(name || '').trim());
     if (!line || !trimmedName) return null;
     const existing = (line.variants || []).find(variant =>
       variant.name.trim().toLowerCase() === trimmedName.toLowerCase()
@@ -982,6 +1137,7 @@ function App() {
     const updatedLine = {
       ...line,
       ...patch,
+      name: patch.name === undefined ? line.name : capitalizeWordInitials(patch.name),
       id: line.id,
       variants: (line.variants || []).map(variant => ({ ...variant })),
     };
@@ -1007,7 +1163,7 @@ function App() {
       ...line,
       variants: (line.variants || []).map(item => (
         item.id === variant.id
-          ? { ...item, ...patch, id: item.id }
+          ? { ...item, ...patch, name: patch.name === undefined ? item.name : capitalizeWordInitials(patch.name), id: item.id }
           : { ...item }
       )),
     };
@@ -1023,7 +1179,7 @@ function App() {
             ...unit,
             productLineId: line.id,
             variantId: variant.id,
-            variant: patch.name ?? variant.name,
+            variant: patch.name === undefined ? variant.name : capitalizeWordInitials(patch.name),
           }
         : unit;
     }));
@@ -1099,6 +1255,9 @@ function App() {
           )}
         </div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <button className="ctl ghost history-open-btn" onClick={() => setShowUnitHistory(true)}>
+            {'LỊCH SỬ SỬA ĐỔI'}
+          </button>
           <BackupManagerButton
             backups={snapshots}
             units={units}
@@ -1169,9 +1328,9 @@ function App() {
                 catalogLines={catalogLines}
                 today={today}
                 importUnits={importUnits}
-                cancelSale={cancelSale}
-                updateNote={updateNote}
-                updateUnit={updateUnit}
+                cancelSale={(id) => cancelSale(id, 'Hu\u1ef7\u0020giao\u0020d\u1ecbch\u0020\u1edf\u0020b\u1ea3ng\u0020b\u00e1n')}
+                updateNote={(id, note) => updateNote(id, note, 'S\u1eeda\u0020ghi\u0020ch\u00fa\u0020\u1edf\u0020b\u1ea3ng\u0020b\u00e1n')}
+                updateUnit={(id, patch) => updateUnit(id, patch, 'S\u1eeda\u0020giao\u0020d\u1ecbch\u0020\u1edf\u0020b\u1ea3ng\u0020b\u00e1n')}
                 onCreateCategory={createCategoryFromName}
                 onCreateLine={createProductLineFromName}
                 onCreateVariant={createProductVariantFromName}
@@ -1188,8 +1347,8 @@ function App() {
                 inStock={inStock}
                 catalogLines={catalogLines}
                 sellUnit={sellUnit}
-                updateNote={updateNote}
-                updateUnit={updateUnit}
+                updateNote={(id, note) => updateNote(id, note, 'S\u1eeda\u0020ghi\u0020ch\u00fa\u0020\u1edf\u0020kho')}
+                updateUnit={(id, patch) => updateUnit(id, patch, 'S\u1eeda\u0020giao\u0020d\u1ecbch\u0020\u1edf\u0020kho')}
                 addUnit={addUnit}
                 importUnits={importUnits}
                 removeUnit={removeUnit}
@@ -1208,6 +1367,8 @@ function App() {
                 onAddVariant={addProductVariant}
                 onUpdateLine={updateProductLine}
                 onUpdateVariant={updateProductVariant}
+                onDeleteLine={deleteProductLine}
+                onDeleteVariant={deleteProductVariant}
                 readOnly={!canEditSharedData}
               />
             )}
@@ -1215,11 +1376,98 @@ function App() {
           </>
         )}
       </main>
+      {showUnitHistory && (
+        <UnitChangeHistoryModal
+          entries={unitChangeHistory}
+          startedAt={historyStartedAtRef.current}
+          onClose={() => setShowUnitHistory(false)}
+        />
+      )}
       {toasts.length > 0 && (
         <div className="app-toast-stack">
           {toasts.map(toast => <AppToast key={toast.id} toast={toast} />)}
         </div>
       )}
+    </div>
+  );
+}
+
+function UnitChangeHistoryModal({ entries, startedAt, onClose }) {
+  const [search, setSearch] = useStateA('');
+  const [actionFilter, setActionFilter] = useStateA('all');
+  const [fieldFilter, setFieldFilter] = useStateA('all');
+  const actions = [...new Set(entries.map(entry => entry.action).filter(Boolean))];
+  const fields = [...new Set(entries.map(entry => entry.fieldLabel).filter(Boolean))];
+  const query = search.trim().toLowerCase();
+  const filteredEntries = entries.filter(entry => {
+    const matchesSearch = !query || [entry.transactionCode, entry.productName, entry.action, entry.fieldLabel, entry.before, entry.after]
+      .some(value => String(value || '').toLowerCase().includes(query));
+    const matchesAction = actionFilter === 'all' || entry.action === actionFilter;
+    const matchesField = fieldFilter === 'all' || entry.fieldLabel === fieldFilter;
+    return matchesSearch && matchesAction && matchesField;
+  });
+
+  return (
+    <div className="modal-bg history-modal-bg" onClick={onClose}>
+      <div className="modal history-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-head">
+          <div>
+            <div className="modal-title"><span className="accent"></span>{'LỊCH SỬ SỬA ĐỔI PHIÊN HIỆN TẠI'}</div>
+            <div className="card-sub">
+              {'Theo dõi từ lúc tải dữ liệu '} {startedAt ? new Date(startedAt).toLocaleString('vi-VN') : ''}
+            </div>
+          </div>
+          <button className="close-x" onClick={onClose}>{'\u00d7'}</button>
+        </div>
+        <div className="history-filterbar">
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Tìm mã GD, sản phẩm, giá trị..." />
+          <select value={actionFilter} onChange={e => setActionFilter(e.target.value)}>
+            <option value="all">Tất cả hành động</option>
+            {actions.map(action => <option key={action} value={action}>{action}</option>)}
+          </select>
+          <select value={fieldFilter} onChange={e => setFieldFilter(e.target.value)}>
+            <option value="all">Tất cả trường</option>
+            {fields.map(field => <option key={field} value={field}>{field}</option>)}
+          </select>
+          <span className="history-count mono">{filteredEntries.length}/{entries.length}</span>
+        </div>
+        <div className="modal-body history-modal-body">
+          <div className="tbl-wrap history-modal-table-wrap">
+            <table className="tbl change-history-table">
+              <thead>
+                <tr>
+                  <th>Thời điểm</th>
+                  <th>Hành động</th>
+                  <th>Mã GD</th>
+                  <th>Sản phẩm</th>
+                  <th>Trường thay đổi</th>
+                  <th>Giá trị cũ</th>
+                  <th>Giá trị mới</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredEntries
+                  .slice()
+                  .sort((a, b) => new Date(b.changedAt) - new Date(a.changedAt))
+                  .map(entry => (
+                    <tr key={entry.id}>
+                      <td className="mono" style={{ fontSize: 12 }}>{new Date(entry.changedAt).toLocaleString('vi-VN')}</td>
+                      <td><span className="history-action">{entry.action}</span></td>
+                      <td className="mono txn-code">{entry.transactionCode}</td>
+                      <td>{entry.productName}</td>
+                      <td>{entry.fieldLabel}</td>
+                      <td className="history-before">{entry.before}</td>
+                      <td className="history-after">{entry.after}</td>
+                    </tr>
+                  ))}
+                {filteredEntries.length === 0 && (
+                  <tr><td colSpan="7" className="empty">Không có lịch sử phù hợp với bộ lọc hiện tại.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

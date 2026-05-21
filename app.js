@@ -1,35 +1,4 @@
 (() => {
-  var __defProp = Object.defineProperty;
-  var __defProps = Object.defineProperties;
-  var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
-  var __getOwnPropSymbols = Object.getOwnPropertySymbols;
-  var __hasOwnProp = Object.prototype.hasOwnProperty;
-  var __propIsEnum = Object.prototype.propertyIsEnumerable;
-  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-  var __spreadValues = (a, b) => {
-    for (var prop in b || (b = {}))
-      if (__hasOwnProp.call(b, prop))
-        __defNormalProp(a, prop, b[prop]);
-    if (__getOwnPropSymbols)
-      for (var prop of __getOwnPropSymbols(b)) {
-        if (__propIsEnum.call(b, prop))
-          __defNormalProp(a, prop, b[prop]);
-      }
-    return a;
-  };
-  var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
-  var __objRest = (source, exclude) => {
-    var target = {};
-    for (var prop in source)
-      if (__hasOwnProp.call(source, prop) && exclude.indexOf(prop) < 0)
-        target[prop] = source[prop];
-    if (source != null && __getOwnPropSymbols)
-      for (var prop of __getOwnPropSymbols(source)) {
-        if (exclude.indexOf(prop) < 0 && __propIsEnum.call(source, prop))
-          target[prop] = source[prop];
-      }
-    return target;
-  };
   const { useState: useStateA, useEffect: useEffectA, useRef: useRefA } = React;
   const DEV_BYPASS_AUTH = true;
   const DEV_SESSION = {
@@ -57,7 +26,7 @@
       const current = unit.transactionCode;
       const transactionCode = current && !usedCodes.has(current) ? current : nextTransactionCode(usedCodes, unit.arrived);
       usedCodes.add(transactionCode);
-      return __spreadProps(__spreadValues({}, unit), { transactionCode });
+      return { ...unit, transactionCode };
     });
   }
   function buildUnitsWithCodes(rows, existingUnits, idPrefix) {
@@ -66,10 +35,11 @@
     return rows.map((unit, index) => {
       const transactionCode = nextTransactionCode(usedCodes, unit.arrived);
       usedCodes.add(transactionCode);
-      return __spreadProps(__spreadValues({}, unit), {
+      return {
+        ...unit,
         id: `${idPrefix}_${stamp}_${index}`,
         transactionCode
-      });
+      };
     });
   }
   function loadSnapshots() {
@@ -96,7 +66,8 @@
     return value === "pending" ? "pending" : "paid";
   }
   function normalizeAffiliateIncomes(entries) {
-    return (entries || []).map((entry) => __spreadProps(__spreadValues({}, entry), {
+    return (entries || []).map((entry) => ({
+      ...entry,
       amount: Math.max(0, Math.round(+entry.amount || 0)),
       status: normalizeAffiliateStatus(entry.status)
     }));
@@ -106,7 +77,7 @@
       const saved = localStorage.getItem("nexus_gear_dashboard_settings");
       const parsed = saved ? JSON.parse(saved) : {};
       return {
-        includePendingAffiliateInProfit: Boolean(parsed == null ? void 0 : parsed.includePendingAffiliateInProfit)
+        includePendingAffiliateInProfit: Boolean(parsed?.includePendingAffiliateInProfit)
       };
     } catch (e) {
       console.error("Failed to load dashboard settings from localStorage:", e);
@@ -118,15 +89,16 @@
       const saved = localStorage.getItem("nexus_gear_product_lines");
       const parsed = saved ? JSON.parse(saved) : [];
       const existing = Array.isArray(parsed) ? parsed : [];
-      const byId = new Map(existing.map((line) => [line.id, line]));
-      window.INITIAL_PRODUCT_LINES.forEach((line) => {
-        if (!byId.has(line.id)) {
-          byId.set(line.id, __spreadProps(__spreadValues({}, line), {
-            variants: (line.variants || []).map((variant) => __spreadValues({}, variant))
-          }));
-        }
-      });
-      return [...byId.values()];
+      if (existing.length) {
+        return existing.map((line) => ({
+          ...line,
+          variants: (line.variants || []).map((variant) => ({ ...variant }))
+        }));
+      }
+      return window.INITIAL_PRODUCT_LINES.map((line) => ({
+        ...line,
+        variants: (line.variants || []).map((variant) => ({ ...variant }))
+      }));
     } catch (e) {
       console.error("Failed to load product lines from localStorage:", e);
       return window.INITIAL_PRODUCT_LINES;
@@ -134,43 +106,28 @@
   }
   function loadCategories() {
     try {
-      const initial = (window.INITIAL_CATEGORIES || window.CATEGORIES || []).map((category) => __spreadValues({}, category));
+      const initial = (window.INITIAL_CATEGORIES || window.CATEGORIES || []).map((category) => ({ ...category }));
       const saved = localStorage.getItem("nexus_gear_categories");
       const parsed = saved ? JSON.parse(saved) : [];
       const existing = Array.isArray(parsed) ? parsed : [];
-      const byId = new Map(initial.map((category) => [category.id, category]));
-      existing.forEach((category) => {
-        if ((category == null ? void 0 : category.id) && (category == null ? void 0 : category.name)) {
-          byId.set(category.id, __spreadValues({}, category));
-        }
-      });
-      return [...byId.values()];
+      const validExisting = existing.filter((category) => category?.id && category?.name);
+      return validExisting.length ? validExisting.map((category) => ({ ...category })) : initial;
     } catch (e) {
       console.error("Failed to load categories from localStorage:", e);
-      return (window.INITIAL_CATEGORIES || window.CATEGORIES || []).map((category) => __spreadValues({}, category));
+      return (window.INITIAL_CATEGORIES || window.CATEGORIES || []).map((category) => ({ ...category }));
     }
   }
   function loadUnits() {
     try {
       const saved = localStorage.getItem("nexus_gear_units");
-      const parsed = saved ? JSON.parse(saved) : window.INITIAL_UNITS;
-      const rows = Array.isArray(parsed) ? parsed : window.INITIAL_UNITS;
-      const seededMonitorSamples = localStorage.getItem("nexus_gear_monitor_seed_v1") === "1";
-      const monitorSamples = window.INITIAL_UNITS.filter((unit) => unit.cat === "monitor");
-      const alreadyHasMonitorUnits = rows.some((unit) => unit.cat === "monitor");
-      if (saved && !seededMonitorSamples) {
-        localStorage.setItem("nexus_gear_monitor_seed_v1", "1");
-        if (!alreadyHasMonitorUnits) {
-          return ensureTransactionCodes([
-            ...rows,
-            ...monitorSamples.map((unit) => __spreadValues({}, unit))
-          ]);
-        }
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return Array.isArray(parsed) ? parsed : [];
       }
-      return ensureTransactionCodes(rows);
+      return ensureTransactionCodes(window.INITIAL_UNITS.map((unit) => ({ ...unit })));
     } catch (e) {
       console.error("Failed to load units from localStorage:", e);
-      return ensureTransactionCodes(window.INITIAL_UNITS);
+      return ensureTransactionCodes(window.INITIAL_UNITS.map((unit) => ({ ...unit })));
     }
   }
   function createSnapshot(units, productLines, categories, affiliateIncomes, dashboardSettings, tab, name, kind = "manual") {
@@ -181,12 +138,12 @@
       kind,
       createdAt,
       tab,
-      units: ensureTransactionCodes(units).map((u) => __spreadValues({}, u)),
-      productLines: productLines.map((line) => __spreadProps(__spreadValues({}, line), { variants: (line.variants || []).map((v) => __spreadValues({}, v)) })),
-      categories: categories.map((category) => __spreadValues({}, category)),
-      affiliateIncomes: normalizeAffiliateIncomes(affiliateIncomes).map((entry) => __spreadValues({}, entry)),
+      units: units.map((u) => ({ ...u })),
+      productLines: productLines.map((line) => ({ ...line, variants: (line.variants || []).map((v) => ({ ...v })) })),
+      categories: categories.map((category) => ({ ...category })),
+      affiliateIncomes: normalizeAffiliateIncomes(affiliateIncomes).map((entry) => ({ ...entry })),
       dashboardSettings: {
-        includePendingAffiliateInProfit: Boolean(dashboardSettings == null ? void 0 : dashboardSettings.includePendingAffiliateInProfit)
+        includePendingAffiliateInProfit: Boolean(dashboardSettings?.includePendingAffiliateInProfit)
       },
       summary: window.summarizeUnits(units)
     };
@@ -209,6 +166,17 @@
     while (existingIds.has(`${safeBase}-${index}`)) index += 1;
     return `${safeBase}-${index}`;
   }
+  function capitalizeWordInitials(value) {
+    return String(value || "").replace(/(^|\s)(\S)/gu, (match, space, firstChar) => `${space}${firstChar.toLocaleUpperCase("vi-VN")}`);
+  }
+  function normalizeUnitText(unit) {
+    return {
+      ...unit,
+      name: capitalizeWordInitials(unit.name),
+      variant: capitalizeWordInitials(unit.variant),
+      note: capitalizeWordInitials(unit.note)
+    };
+  }
   const EXTRA_CATEGORY_COLORS = [
     "#0ea5e9",
     "#8b5cf6",
@@ -220,6 +188,40 @@
   ];
   const SHARED_POLL_MS = 2500;
   const LOCK_HEARTBEAT_MS = 1e4;
+  const UNIT_HISTORY_FIELDS = [
+    { key: "productLineId", label: "D\xF2ng s\u1EA3n ph\u1EA9m" },
+    { key: "variantId", label: "Ph\xE2n lo\u1EA1i" },
+    { key: "name", label: "T\xEAn s\u1EA3n ph\u1EA9m" },
+    { key: "cat", label: "Danh m\u1EE5c" },
+    { key: "variant", label: "T\xEAn ph\xE2n lo\u1EA1i" },
+    { key: "buy", label: "Gi\xE1 mua" },
+    { key: "expectedSell", label: "Gi\xE1 b\xE1n d\u1EF1 ki\u1EBFn" },
+    { key: "arrived", label: "Ng\xE0y nh\u1EADp" },
+    { key: "status", label: "Tr\u1EA1ng th\xE1i" },
+    { key: "sell", label: "Gi\xE1 b\xE1n th\u1EF1c t\u1EBF" },
+    { key: "sold", label: "Ng\xE0y b\xE1n" },
+    { key: "note", label: "Ghi ch\xFA" }
+  ];
+  function unitHistoryValue(value) {
+    if (value === void 0 || value === null || value === "") return "\u2014";
+    if (value === "in_stock") return "T\u1ED3n kho";
+    if (value === "sold") return "\u0110\xE3 b\xE1n";
+    return String(value);
+  }
+  function buildUnitHistoryEntries(before, after, action, changedAt = (/* @__PURE__ */ new Date()).toISOString()) {
+    return UNIT_HISTORY_FIELDS.filter((field) => before?.[field.key] !== after?.[field.key]).map((field) => ({
+      id: `hist_${Date.now()}_${field.key}_${Math.random().toString(36).slice(2, 7)}`,
+      unitId: after.id,
+      transactionCode: after.transactionCode,
+      productName: after.name,
+      action,
+      field: field.key,
+      fieldLabel: field.label,
+      before: unitHistoryValue(before?.[field.key]),
+      after: unitHistoryValue(after?.[field.key]),
+      changedAt
+    }));
+  }
   function getOrCreateClientId() {
     try {
       const saved = localStorage.getItem("nexus_gear_client_id");
@@ -227,7 +229,7 @@
       const generated = `client_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       localStorage.setItem("nexus_gear_client_id", generated);
       return generated;
-    } catch (e) {
+    } catch {
       return `client_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     }
   }
@@ -237,41 +239,39 @@
   }
   function buildSharedState(units, productLines, categories, affiliateIncomes, dashboardSettings, snapshots) {
     return {
-      units: ensureTransactionCodes(units).map((unit) => __spreadValues({}, unit)),
+      units: units.map((unit) => ({ ...unit })),
       productLines: productLines.map((line) => cloneProductLine(line)),
-      categories: categories.map((category) => __spreadValues({}, category)),
-      affiliateIncomes: normalizeAffiliateIncomes(affiliateIncomes).map((entry) => __spreadValues({}, entry)),
+      categories: categories.map((category) => ({ ...category })),
+      affiliateIncomes: normalizeAffiliateIncomes(affiliateIncomes).map((entry) => ({ ...entry })),
       dashboardSettings: {
-        includePendingAffiliateInProfit: Boolean(dashboardSettings == null ? void 0 : dashboardSettings.includePendingAffiliateInProfit)
+        includePendingAffiliateInProfit: Boolean(dashboardSettings?.includePendingAffiliateInProfit)
       },
-      snapshots: snapshots.map((snapshot) => {
-        var _a;
-        return __spreadProps(__spreadValues({}, snapshot), {
-          units: ensureTransactionCodes(snapshot.units || []).map((unit) => __spreadValues({}, unit)),
-          productLines: (snapshot.productLines || []).map((line) => cloneProductLine(line)),
-          categories: (snapshot.categories || []).map((category) => __spreadValues({}, category)),
-          affiliateIncomes: normalizeAffiliateIncomes(snapshot.affiliateIncomes || []).map((entry) => __spreadValues({}, entry)),
-          dashboardSettings: {
-            includePendingAffiliateInProfit: Boolean((_a = snapshot.dashboardSettings) == null ? void 0 : _a.includePendingAffiliateInProfit)
-          }
-        });
-      })
+      snapshots: snapshots.map((snapshot) => ({
+        ...snapshot,
+        units: (snapshot.units || []).map((unit) => ({ ...unit })),
+        productLines: (snapshot.productLines || []).map((line) => cloneProductLine(line)),
+        categories: (snapshot.categories || []).map((category) => ({ ...category })),
+        affiliateIncomes: normalizeAffiliateIncomes(snapshot.affiliateIncomes || []).map((entry) => ({ ...entry })),
+        dashboardSettings: {
+          includePendingAffiliateInProfit: Boolean(snapshot.dashboardSettings?.includePendingAffiliateInProfit)
+        }
+      }))
     };
   }
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
   function cloneProductLine(line) {
-    return __spreadProps(__spreadValues({}, line), {
-      variants: (line.variants || []).map((variant) => __spreadValues({}, variant))
-    });
+    return {
+      ...line,
+      variants: (line.variants || []).map((variant) => ({ ...variant }))
+    };
   }
   function upsertProductLine(lines, line) {
     const cleanLine = cloneProductLine(line);
     return lines.some((item) => item.id === cleanLine.id) ? lines.map((item) => item.id === cleanLine.id ? cleanLine : item) : [...lines, cleanLine];
   }
   function App() {
-    var _a;
     const [session, setSession] = useStateA(DEV_BYPASS_AUTH ? DEV_SESSION : null);
     const [initialized, setInitialized] = useStateA(false);
     const [tab, setTab] = useStateA(DEV_BYPASS_AUTH ? "dashboard" : "storefront");
@@ -286,12 +286,20 @@
     const [syncReady, setSyncReady] = useStateA(false);
     const [serverVersion, setServerVersion] = useStateA(0);
     const [editLock, setEditLock] = useStateA({ owned: false, lock: null });
+    const [unitChangeHistory, setUnitChangeHistory] = useStateA([]);
+    const [showUnitHistory, setShowUnitHistory] = useStateA(false);
+    const historyStartedAtRef = useRefA((/* @__PURE__ */ new Date()).toISOString());
     const clientIdRef = useRefA(getOrCreateClientId());
     const clientNameRef = useRefA(makeClientName(clientIdRef.current));
     const suppressRemoteSaveRef = useRefA(false);
     const saveTimerRef = useRefA(null);
     const serverVersionRef = useRefA(0);
+    const localSaveReadyRef = useRefA({ units: false, categories: false, productLines: false, affiliateIncomes: false, dashboardSettings: false, snapshots: false });
+    const userDataDirtyRef = useRefA(false);
     window.CATEGORIES = categories;
+    const markUserDataChanged = () => {
+      userDataDirtyRef.current = true;
+    };
     useEffectA(() => {
       if (DEV_BYPASS_AUTH) {
         setInitialized(true);
@@ -314,29 +322,27 @@
     }, []);
     const pushToast = (toast) => {
       const id = `toast_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      const nextToast = __spreadValues({ id }, toast);
+      const nextToast = { id, ...toast };
       setToasts((prev) => [...prev, nextToast].slice(-3));
       setTimeout(() => {
         setToasts((prev) => prev.filter((item) => item.id !== id));
       }, 5e3);
     };
     const applySharedPayload = (payload) => {
-      var _a2, _b;
-      if (!(payload == null ? void 0 : payload.state)) return;
+      if (!payload?.state) return;
       suppressRemoteSaveRef.current = true;
-      setUnits(ensureTransactionCodes(payload.state.units || []));
-      setProductLines(payload.state.productLines || []);
-      setCategories(((_a2 = payload.state.categories) == null ? void 0 : _a2.length) ? payload.state.categories : loadCategories());
+      setUnits((payload.state.units || []).map((unit) => ({ ...unit })));
+      setProductLines((payload.state.productLines || []).map((line) => cloneProductLine(line)));
+      setCategories(payload.state.categories?.length ? payload.state.categories : loadCategories());
       setAffiliateIncomes(normalizeAffiliateIncomes(payload.state.affiliateIncomes || []));
       setDashboardSettings({
-        includePendingAffiliateInProfit: Boolean((_b = payload.state.dashboardSettings) == null ? void 0 : _b.includePendingAffiliateInProfit)
+        includePendingAffiliateInProfit: Boolean(payload.state.dashboardSettings?.includePendingAffiliateInProfit)
       });
       setSnapshots(payload.state.snapshots || []);
       serverVersionRef.current = payload.version || 0;
       setServerVersion(payload.version || 0);
     };
     const acquireEditLock = async ({ silent = false } = {}) => {
-      var _a2;
       try {
         const res = await fetch("/api/lock/acquire", {
           method: "POST",
@@ -351,7 +357,7 @@
         setEditLock({ owned, lock: payload.lock || null });
         if (!silent) {
           pushToast(
-            owned ? { type: "success", title: "\u0110\xE3 nh\u1EADn quy\u1EC1n s\u1EEDa", message: "Phi\xEAn n\xE0y \u0111ang gi\u1EEF quy\u1EC1n ch\u1EC9nh s\u1EEDa d\u1EEF li\u1EC7u chung." } : { type: "warning", title: "Ch\u1EC9 xem", message: `${((_a2 = payload.lock) == null ? void 0 : _a2.ownerName) || "Thi\u1EBFt b\u1ECB kh\xE1c"} \u0111ang ch\u1EC9nh s\u1EEDa d\u1EEF li\u1EC7u.` }
+            owned ? { type: "success", title: "\u0110\xE3 nh\u1EADn quy\u1EC1n s\u1EEDa", message: "Phi\xEAn n\xE0y \u0111ang gi\u1EEF quy\u1EC1n ch\u1EC9nh s\u1EEDa d\u1EEF li\u1EC7u chung." } : { type: "warning", title: "Ch\u1EC9 xem", message: `${payload.lock?.ownerName || "Thi\u1EBFt b\u1ECB kh\xE1c"} \u0111ang ch\u1EC9nh s\u1EEDa d\u1EEF li\u1EC7u.` }
           );
         }
         return owned;
@@ -430,6 +436,10 @@
       };
     }, []);
     useEffectA(() => {
+      if (!localSaveReadyRef.current.units) {
+        localSaveReadyRef.current.units = true;
+        return;
+      }
       try {
         localStorage.setItem("nexus_gear_units", JSON.stringify(units));
       } catch (e) {
@@ -437,6 +447,10 @@
       }
     }, [units]);
     useEffectA(() => {
+      if (!localSaveReadyRef.current.categories) {
+        localSaveReadyRef.current.categories = true;
+        return;
+      }
       try {
         localStorage.setItem("nexus_gear_categories", JSON.stringify(categories));
       } catch (e) {
@@ -444,6 +458,10 @@
       }
     }, [categories]);
     useEffectA(() => {
+      if (!localSaveReadyRef.current.productLines) {
+        localSaveReadyRef.current.productLines = true;
+        return;
+      }
       try {
         localStorage.setItem("nexus_gear_product_lines", JSON.stringify(productLines));
       } catch (e) {
@@ -451,6 +469,10 @@
       }
     }, [productLines]);
     useEffectA(() => {
+      if (!localSaveReadyRef.current.affiliateIncomes) {
+        localSaveReadyRef.current.affiliateIncomes = true;
+        return;
+      }
       try {
         localStorage.setItem("nexus_gear_affiliate_incomes", JSON.stringify(affiliateIncomes));
       } catch (e) {
@@ -458,6 +480,10 @@
       }
     }, [affiliateIncomes]);
     useEffectA(() => {
+      if (!localSaveReadyRef.current.dashboardSettings) {
+        localSaveReadyRef.current.dashboardSettings = true;
+        return;
+      }
       try {
         localStorage.setItem("nexus_gear_dashboard_settings", JSON.stringify(dashboardSettings));
       } catch (e) {
@@ -465,6 +491,10 @@
       }
     }, [dashboardSettings]);
     useEffectA(() => {
+      if (!localSaveReadyRef.current.snapshots) {
+        localSaveReadyRef.current.snapshots = true;
+        return;
+      }
       try {
         localStorage.setItem("nexus_gear_snapshots", JSON.stringify(snapshots));
       } catch (e) {
@@ -477,6 +507,7 @@
         suppressRemoteSaveRef.current = false;
         return;
       }
+      if (!userDataDirtyRef.current) return;
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(async () => {
         try {
@@ -491,6 +522,7 @@
           });
           const payload = await res.json();
           if (res.ok) {
+            userDataDirtyRef.current = false;
             serverVersionRef.current = payload.version || serverVersionRef.current;
             setServerVersion(payload.version);
             return;
@@ -529,10 +561,7 @@
       const interval = setInterval(async () => {
         try {
           const payload = await (await fetch("/api/state", { cache: "no-store" })).json();
-          setEditLock((prev) => {
-            var _a2;
-            return { owned: prev.owned && ((_a2 = payload.lock) == null ? void 0 : _a2.ownerId) === clientIdRef.current, lock: payload.lock || null };
-          });
+          setEditLock((prev) => ({ owned: prev.owned && payload.lock?.ownerId === clientIdRef.current, lock: payload.lock || null }));
           if (payload.initialized && payload.version > serverVersionRef.current) {
             applySharedPayload(payload);
           }
@@ -566,10 +595,8 @@
     }, [syncReady, syncMode, editLock.owned]);
     useEffectA(() => {
       const releaseOnUnload = () => {
-        var _a2;
         if (!editLock.owned || syncMode !== "shared") return;
-        (_a2 = navigator.sendBeacon) == null ? void 0 : _a2.call(
-          navigator,
+        navigator.sendBeacon?.(
           "/api/lock/release",
           new Blob([JSON.stringify({ clientId: clientIdRef.current })], { type: "application/json" })
         );
@@ -621,12 +648,14 @@
     };
     const canEditSharedData = syncMode === "shared" && editLock.owned;
     const ensureCanEdit = () => {
-      var _a2;
-      if (canEditSharedData) return true;
+      if (canEditSharedData) {
+        markUserDataChanged();
+        return true;
+      }
       pushToast({
         type: "warning",
         title: syncMode === "offline" ? "Ch\u01B0a c\xF3 m\xE1y ch\u1EE7 chung" : "Ch\u1EBF \u0111\u1ED9 ch\u1EC9 xem",
-        message: syncMode === "offline" ? "H\xE3y m\u1EDF trang qua m\xE1y ch\u1EE7 \u0111\u1ED3ng b\u1ED9 \u0111\u1EC3 ch\u1EC9nh s\u1EEDa d\u1EEF li\u1EC7u chung." : `${((_a2 = editLock.lock) == null ? void 0 : _a2.ownerName) || "Thi\u1EBFt b\u1ECB kh\xE1c"} \u0111ang gi\u1EEF quy\u1EC1n ch\u1EC9nh s\u1EEDa.`
+        message: syncMode === "offline" ? "H\xE3y m\u1EDF trang qua m\xE1y ch\u1EE7 \u0111\u1ED3ng b\u1ED9 \u0111\u1EC3 ch\u1EC9nh s\u1EEDa d\u1EEF li\u1EC7u chung." : `${editLock.lock?.ownerName || "Thi\u1EBFt b\u1ECB kh\xE1c"} \u0111ang gi\u1EEF quy\u1EC1n ch\u1EC9nh s\u1EEDa.`
       });
       return false;
     };
@@ -650,46 +679,81 @@
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     const sellUnit = (id, sell, soldDate, note) => {
       if (!ensureCanEdit()) return;
-      setUnits((prev) => prev.map(
-        (u) => u.id === id ? __spreadProps(__spreadValues({}, u), { status: "sold", sell: +sell, sold: soldDate, note: note != null ? note : u.note }) : u
-      ));
+      setUnits((prev) => prev.map((u) => {
+        if (u.id !== id) return u;
+        const next = { ...u, status: "sold", sell: +sell, sold: soldDate, note: capitalizeWordInitials(note ?? u.note) };
+        appendUnitHistory(buildUnitHistoryEntries(u, next, "Ghi nh\u1EADn b\xE1n h\xE0ng"));
+        return next;
+      }));
     };
-    const cancelSale = (id) => {
-      if (!ensureCanEdit()) return;
-      setUnits((prev) => prev.map(
-        (u) => u.id === id ? __spreadProps(__spreadValues({}, u), { status: "in_stock", sell: void 0, sold: void 0 }) : u
-      ));
+    const appendUnitHistory = (entries) => {
+      if (!entries.length) return;
+      setUnitChangeHistory((prev) => {
+        const next = [...prev];
+        entries.forEach((entry) => {
+          const last = next[next.length - 1];
+          const nearSameEdit = last && last.transactionCode === entry.transactionCode && last.field === entry.field && new Date(entry.changedAt) - new Date(last.changedAt) < 1500;
+          if (nearSameEdit) {
+            next[next.length - 1] = { ...entry, id: last.id, before: last.before };
+          } else {
+            next.push(entry);
+          }
+        });
+        return next;
+      });
     };
-    const updateNote = (id, note) => {
-      if (!canEditSharedData) return;
-      setUnits((prev) => prev.map((u) => u.id === id ? __spreadProps(__spreadValues({}, u), { note }) : u));
-    };
-    const updateUnit = (id, patch) => {
+    const cancelSale = (id, action = "Hu\u1EF7 giao d\u1ECBch b\xE1n") => {
       if (!ensureCanEdit()) return;
       setUnits((prev) => prev.map((u) => {
         if (u.id !== id) return u;
-        const next = __spreadProps(__spreadValues(__spreadValues({}, u), patch), {
+        const next = { ...u, status: "in_stock", sell: void 0, sold: void 0 };
+        appendUnitHistory(buildUnitHistoryEntries(u, next, action));
+        return next;
+      }));
+    };
+    const updateNote = (id, note, action = "S\u1EEDa ghi ch\xFA") => {
+      if (!canEditSharedData) return;
+      setUnits((prev) => prev.map((u) => {
+        if (u.id !== id) return u;
+        const next = { ...u, note: capitalizeWordInitials(note) };
+        appendUnitHistory(buildUnitHistoryEntries(u, next, action));
+        return next;
+      }));
+    };
+    const updateUnit = (id, patch, action = "S\u1EEDa giao d\u1ECBch") => {
+      if (!ensureCanEdit()) return;
+      setUnits((prev) => prev.map((u) => {
+        if (u.id !== id) return u;
+        const next = {
+          ...u,
+          ...patch,
+          note: patch.note === void 0 ? u.note : capitalizeWordInitials(patch.note),
           id: u.id,
           transactionCode: u.transactionCode
-        });
+        };
         if (next.status === "in_stock") {
           delete next.sell;
           delete next.sold;
         }
+        appendUnitHistory(buildUnitHistoryEntries(u, next, action));
         return next;
       }));
     };
     const addUnit = (u) => {
       if (!ensureCanEdit()) return;
       const quantity = Math.max(1, Math.floor(+u.quantity || 1));
-      const _a2 = u, { quantity: _quantity } = _a2, base = __objRest(_a2, ["quantity"]);
-      const rows = Array.from({ length: quantity }, () => __spreadProps(__spreadValues({}, base), { status: "in_stock" }));
-      setUnits((prev) => [...buildUnitsWithCodes(rows, prev, "manual"), ...prev]);
+      const { quantity: _quantity, ...base } = u;
+      const rows = Array.from({ length: quantity }, () => normalizeUnitText({ ...base, status: "in_stock" }));
+      setUnits((prev) => {
+        const createdRows = buildUnitsWithCodes(rows, prev, "manual");
+        appendUnitHistory(createdRows.flatMap((unit) => buildUnitHistoryEntries({}, unit, "Nh\u1EADp h\xE0ng m\u1EDBi")));
+        return [...createdRows, ...prev];
+      });
     };
     const importUnits = (rows, options = {}) => {
       if (!ensureCanEdit()) return;
       const catalogLines2 = window.mergeCatalogWithUnits(productLines, units);
-      const normalizedRows = window.attachCatalogRefs(rows, catalogLines2);
+      const normalizedRows = window.attachCatalogRefs(rows, catalogLines2).map((unit) => normalizeUnitText(unit));
       setUnits(
         (prev) => options.replaceExisting ? buildUnitsWithCodes(normalizedRows, [], "imp") : [...buildUnitsWithCodes(normalizedRows, prev, "imp"), ...prev]
       );
@@ -713,12 +777,13 @@
       if (!ensureCanEdit()) return;
       setAffiliateIncomes((prev) => prev.map((entry) => {
         if (entry.id !== id) return entry;
-        return __spreadProps(__spreadValues({}, entry), {
+        return {
+          ...entry,
           amount: Math.max(0, Math.round(+patch.amount || 0)),
           receivedAt: patch.receivedAt || entry.receivedAt,
           status: normalizeAffiliateStatus(patch.status),
           note: String(patch.note || "").trim()
-        });
+        };
       }));
     };
     const removeAffiliateIncome = (id) => {
@@ -727,7 +792,8 @@
     };
     const setIncludePendingAffiliateInProfit = (value) => {
       if (!ensureCanEdit()) return;
-      setDashboardSettings((prev) => __spreadProps(__spreadValues({}, prev), {
+      setDashboardSettings((prev) => ({
+        ...prev,
         includePendingAffiliateInProfit: Boolean(value)
       }));
     };
@@ -741,11 +807,10 @@
       pushToast({
         type: "success",
         title: "\u0110\xE3 sao l\u01B0u",
-        message: (name == null ? void 0 : name.trim()) ? `\u0110\xE3 l\u01B0u "${name.trim()}".` : "\u0110\xE3 l\u01B0u tr\u1EA1ng th\xE1i hi\u1EC7n t\u1EA1i."
+        message: name?.trim() ? `\u0110\xE3 l\u01B0u "${name.trim()}".` : "\u0110\xE3 l\u01B0u tr\u1EA1ng th\xE1i hi\u1EC7n t\u1EA1i."
       });
     };
     const restoreSnapshot = (id) => {
-      var _a2;
       if (!ensureCanEdit()) return;
       const snapshot = snapshots.find((s) => s.id === id);
       if (!snapshot) return;
@@ -760,12 +825,12 @@
         "auto"
       );
       setSnapshots((prev) => [safetyCopy, ...prev]);
-      setUnits(ensureTransactionCodes(snapshot.units || []));
+      setUnits((snapshot.units || []).map((unit) => ({ ...unit })));
       setCategories(snapshot.categories || categories);
-      setProductLines(snapshot.productLines || productLines);
+      setProductLines((snapshot.productLines || productLines).map((line) => cloneProductLine(line)));
       setAffiliateIncomes(normalizeAffiliateIncomes(snapshot.affiliateIncomes || []));
       setDashboardSettings({
-        includePendingAffiliateInProfit: Boolean((_a2 = snapshot.dashboardSettings) == null ? void 0 : _a2.includePendingAffiliateInProfit)
+        includePendingAffiliateInProfit: Boolean(snapshot.dashboardSettings?.includePendingAffiliateInProfit)
       });
       setTab(snapshot.tab || "dashboard");
       pushToast({
@@ -799,10 +864,47 @@
             }
           ];
         }
-        return prev.map((item) => item.id === line.id ? __spreadProps(__spreadValues({}, item), {
+        return prev.map((item) => item.id === line.id ? {
+          ...item,
           variants: item.variants.some((v) => v.id === variant.id || v.name === variant.name) ? item.variants : [...item.variants, variant]
-        }) : item);
+        } : item);
       });
+    };
+    const deleteProductLine = (line) => {
+      if (!ensureCanEdit()) return;
+      const hasTransactions = units.some(
+        (unit) => unit.productLineId === line.id || unit.name === line.name && unit.cat === line.cat
+      );
+      if (hasTransactions) {
+        pushToast({
+          type: "warning",
+          title: "Ch\u01B0a th\u1EC3 x\xF3a d\xF2ng s\u1EA3n ph\u1EA9m",
+          message: "D\xF2ng n\xE0y \u0111\xE3 c\xF3 giao d\u1ECBch trong kho ho\u1EB7c l\u1ECBch s\u1EED b\xE1n."
+        });
+        return;
+      }
+      setProductLines((prev) => prev.filter((item) => item.id !== line.id));
+    };
+    const deleteProductVariant = (line, variant) => {
+      if (!ensureCanEdit()) return;
+      const hasTransactions = units.some((unit) => {
+        const belongsToLine = unit.productLineId === line.id || unit.name === line.name && unit.cat === line.cat;
+        const belongsToVariant = unit.variantId === variant.id || belongsToLine && (unit.variant || "M\u1EB7c \u0111\u1ECBnh") === variant.name;
+        return belongsToLine && belongsToVariant;
+      });
+      if (hasTransactions) {
+        pushToast({
+          type: "warning",
+          title: "Ch\u01B0a th\u1EC3 x\xF3a ph\xE2n lo\u1EA1i",
+          message: "Ph\xE2n lo\u1EA1i n\xE0y \u0111\xE3 c\xF3 giao d\u1ECBch trong kho ho\u1EB7c l\u1ECBch s\u1EED b\xE1n."
+        });
+        return;
+      }
+      const updatedLine = {
+        ...line,
+        variants: (line.variants || []).filter((item) => item.id !== variant.id)
+      };
+      setProductLines((prev) => upsertProductLine(prev, updatedLine));
     };
     const createCategoryFromName = (name) => {
       if (!ensureCanEdit()) return null;
@@ -823,11 +925,10 @@
       return category;
     };
     const createProductLineFromName = (name, catId) => {
-      var _a2;
       if (!ensureCanEdit()) return null;
-      const trimmedName = String(name || "").trim();
+      const trimmedName = capitalizeWordInitials(String(name || "").trim());
       if (!trimmedName) return null;
-      const safeCat = categories.some((category) => category.id === catId) ? catId : ((_a2 = categories[0]) == null ? void 0 : _a2.id) || "accessory";
+      const safeCat = categories.some((category) => category.id === catId) ? catId : categories[0]?.id || "accessory";
       const currentCatalog = window.mergeCatalogWithUnits(productLines, units);
       const existing = currentCatalog.find(
         (line2) => line2.cat === safeCat && line2.name.trim().toLowerCase() === trimmedName.toLowerCase()
@@ -847,7 +948,7 @@
     };
     const createProductVariantFromName = (line, name) => {
       if (!ensureCanEdit()) return null;
-      const trimmedName = String(name || "").trim();
+      const trimmedName = capitalizeWordInitials(String(name || "").trim());
       if (!line || !trimmedName) return null;
       const existing = (line.variants || []).find(
         (variant2) => variant2.name.trim().toLowerCase() === trimmedName.toLowerCase()
@@ -864,35 +965,40 @@
     };
     const updateProductLine = (line, patch) => {
       if (!ensureCanEdit()) return;
-      const updatedLine = __spreadProps(__spreadValues(__spreadValues({}, line), patch), {
+      const updatedLine = {
+        ...line,
+        ...patch,
+        name: patch.name === void 0 ? line.name : capitalizeWordInitials(patch.name),
         id: line.id,
-        variants: (line.variants || []).map((variant) => __spreadValues({}, variant))
-      });
+        variants: (line.variants || []).map((variant) => ({ ...variant }))
+      };
       setProductLines((prev) => upsertProductLine(prev, updatedLine));
       setUnits((prev) => prev.map((unit) => {
         const belongsToLine = unit.productLineId === line.id || unit.name === line.name && unit.cat === line.cat;
-        return belongsToLine ? __spreadProps(__spreadValues({}, unit), {
+        return belongsToLine ? {
+          ...unit,
           productLineId: line.id,
           name: updatedLine.name,
           cat: updatedLine.cat
-        }) : unit;
+        } : unit;
       }));
     };
     const updateProductVariant = (line, variant, patch) => {
       if (!ensureCanEdit()) return;
-      const updatedLine = __spreadProps(__spreadValues({}, line), {
-        variants: (line.variants || []).map((item) => item.id === variant.id ? __spreadProps(__spreadValues(__spreadValues({}, item), patch), { id: item.id }) : __spreadValues({}, item))
-      });
+      const updatedLine = {
+        ...line,
+        variants: (line.variants || []).map((item) => item.id === variant.id ? { ...item, ...patch, name: patch.name === void 0 ? item.name : capitalizeWordInitials(patch.name), id: item.id } : { ...item })
+      };
       setProductLines((prev) => upsertProductLine(prev, updatedLine));
       setUnits((prev) => prev.map((unit) => {
-        var _a2;
         const belongsToLine = unit.productLineId === line.id || unit.name === line.name && unit.cat === line.cat;
         const belongsToVariant = unit.variantId === variant.id || belongsToLine && (unit.variant || "M\u1EB7c \u0111\u1ECBnh") === variant.name;
-        return belongsToLine && belongsToVariant ? __spreadProps(__spreadValues({}, unit), {
+        return belongsToLine && belongsToVariant ? {
+          ...unit,
           productLineId: line.id,
           variantId: variant.id,
-          variant: (_a2 = patch.name) != null ? _a2 : variant.name
-        }) : unit;
+          variant: patch.name === void 0 ? variant.name : capitalizeWordInitials(patch.name)
+        } : unit;
       }));
     };
     const inStock = units.filter((u) => u.status === "in_stock");
@@ -937,7 +1043,7 @@
       fontSize: 11,
       color: remainingTime < 5 ? "var(--red)" : "var(--muted)",
       marginLeft: 12
-    } }, "Session: ", remainingTime, "m")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, alignItems: "center" } }, /* @__PURE__ */ React.createElement(
+    } }, "Session: ", remainingTime, "m")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, alignItems: "center" } }, /* @__PURE__ */ React.createElement("button", { className: "ctl ghost history-open-btn", onClick: () => setShowUnitHistory(true) }, "L\u1ECACH S\u1EEC S\u1EECA \u0110\u1ED4I"), /* @__PURE__ */ React.createElement(
       BackupManagerButton,
       {
         backups: snapshots,
@@ -956,7 +1062,7 @@
         title: "\u0110\u0103ng xu\u1EA5t"
       },
       "\u0110\u0103ng xu\u1EA5t"
-    ))), !canEditSharedData ? /* @__PURE__ */ React.createElement("div", { className: "sync-banner viewer" }, "Ch\u1EBF \u0111\u1ED9 ch\u1EC9 xem \xB7 ", ((_a = editLock.lock) == null ? void 0 : _a.ownerName) || "Thi\u1EBFt b\u1ECB kh\xE1c", " \u0111ang gi\u1EEF quy\u1EC1n ch\u1EC9nh s\u1EEDa. D\u1EEF li\u1EC7u v\u1EABn t\u1EF1 \u0111\u1ED3ng b\u1ED9 t\u1EEB m\xE1y ch\u1EE7 chung.") : /* @__PURE__ */ React.createElement("div", { className: "sync-banner editor" }, "Phi\xEAn n\xE0y \u0111ang gi\u1EEF quy\u1EC1n ch\u1EC9nh s\u1EEDa \u0111\u1ED9c quy\u1EC1n. C\xE1c thi\u1EBFt b\u1ECB kh\xE1c ch\u1EC9 xem v\xE0 t\u1EF1 nh\u1EADn d\u1EEF li\u1EC7u m\u1EDBi."), /* @__PURE__ */ React.createElement("main", { "data-screen-label": tab === "dashboard" ? "01 Dashboard" : tab === "inventory" ? "02 Inventory" : tab === "catalog" ? "03 Catalog" : "04 Storefront" }, !canAccess(tab) ? /* @__PURE__ */ React.createElement("div", { style: { padding: "60px 28px", textAlign: "center", color: "var(--muted)" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 16, marginBottom: 16 } }, "\u274C B\u1EA1n kh\xF4ng c\xF3 quy\u1EC1n truy c\u1EADp trang n\xE0y"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, marginBottom: 24 } }, "Ch\u1EC9 qu\u1EA3n tr\u1ECB vi\xEAn (admin) m\u1EDBi c\xF3 th\u1EC3 xem trang n\xE0y."), /* @__PURE__ */ React.createElement("button", { className: "ctl primary", onClick: () => setTab("storefront") }, "\u2190 Quay v\u1EC1 C\u1EEDa h\xE0ng")) : /* @__PURE__ */ React.createElement(React.Fragment, null, tab === "dashboard" && /* @__PURE__ */ React.createElement(
+    ))), !canEditSharedData ? /* @__PURE__ */ React.createElement("div", { className: "sync-banner viewer" }, "Ch\u1EBF \u0111\u1ED9 ch\u1EC9 xem \xB7 ", editLock.lock?.ownerName || "Thi\u1EBFt b\u1ECB kh\xE1c", " \u0111ang gi\u1EEF quy\u1EC1n ch\u1EC9nh s\u1EEDa. D\u1EEF li\u1EC7u v\u1EABn t\u1EF1 \u0111\u1ED3ng b\u1ED9 t\u1EEB m\xE1y ch\u1EE7 chung.") : /* @__PURE__ */ React.createElement("div", { className: "sync-banner editor" }, "Phi\xEAn n\xE0y \u0111ang gi\u1EEF quy\u1EC1n ch\u1EC9nh s\u1EEDa \u0111\u1ED9c quy\u1EC1n. C\xE1c thi\u1EBFt b\u1ECB kh\xE1c ch\u1EC9 xem v\xE0 t\u1EF1 nh\u1EADn d\u1EEF li\u1EC7u m\u1EDBi."), /* @__PURE__ */ React.createElement("main", { "data-screen-label": tab === "dashboard" ? "01 Dashboard" : tab === "inventory" ? "02 Inventory" : tab === "catalog" ? "03 Catalog" : "04 Storefront" }, !canAccess(tab) ? /* @__PURE__ */ React.createElement("div", { style: { padding: "60px 28px", textAlign: "center", color: "var(--muted)" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 16, marginBottom: 16 } }, "\u274C B\u1EA1n kh\xF4ng c\xF3 quy\u1EC1n truy c\u1EADp trang n\xE0y"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, marginBottom: 24 } }, "Ch\u1EC9 qu\u1EA3n tr\u1ECB vi\xEAn (admin) m\u1EDBi c\xF3 th\u1EC3 xem trang n\xE0y."), /* @__PURE__ */ React.createElement("button", { className: "ctl primary", onClick: () => setTab("storefront") }, "\u2190 Quay v\u1EC1 C\u1EEDa h\xE0ng")) : /* @__PURE__ */ React.createElement(React.Fragment, null, tab === "dashboard" && /* @__PURE__ */ React.createElement(
       Dashboard,
       {
         units,
@@ -966,9 +1072,9 @@
         catalogLines,
         today,
         importUnits,
-        cancelSale,
-        updateNote,
-        updateUnit,
+        cancelSale: (id) => cancelSale(id, "Hu\u1EF7 giao d\u1ECBch \u1EDF b\u1EA3ng b\xE1n"),
+        updateNote: (id, note) => updateNote(id, note, "S\u1EEDa ghi ch\xFA \u1EDF b\u1EA3ng b\xE1n"),
+        updateUnit: (id, patch) => updateUnit(id, patch, "S\u1EEDa giao d\u1ECBch \u1EDF b\u1EA3ng b\xE1n"),
         onCreateCategory: createCategoryFromName,
         onCreateLine: createProductLineFromName,
         onCreateVariant: createProductVariantFromName,
@@ -985,8 +1091,8 @@
         inStock,
         catalogLines,
         sellUnit,
-        updateNote,
-        updateUnit,
+        updateNote: (id, note) => updateNote(id, note, "S\u1EEDa ghi ch\xFA \u1EDF kho"),
+        updateUnit: (id, patch) => updateUnit(id, patch, "S\u1EEDa giao d\u1ECBch \u1EDF kho"),
         addUnit,
         importUnits,
         removeUnit,
@@ -1005,9 +1111,33 @@
         onAddVariant: addProductVariant,
         onUpdateLine: updateProductLine,
         onUpdateVariant: updateProductVariant,
+        onDeleteLine: deleteProductLine,
+        onDeleteVariant: deleteProductVariant,
         readOnly: !canEditSharedData
       }
-    ), tab === "storefront" && /* @__PURE__ */ React.createElement(Storefront, { inStock }))), toasts.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "app-toast-stack" }, toasts.map((toast) => /* @__PURE__ */ React.createElement(AppToast, { key: toast.id, toast }))));
+    ), tab === "storefront" && /* @__PURE__ */ React.createElement(Storefront, { inStock }))), showUnitHistory && /* @__PURE__ */ React.createElement(
+      UnitChangeHistoryModal,
+      {
+        entries: unitChangeHistory,
+        startedAt: historyStartedAtRef.current,
+        onClose: () => setShowUnitHistory(false)
+      }
+    ), toasts.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "app-toast-stack" }, toasts.map((toast) => /* @__PURE__ */ React.createElement(AppToast, { key: toast.id, toast }))));
+  }
+  function UnitChangeHistoryModal({ entries, startedAt, onClose }) {
+    const [search, setSearch] = useStateA("");
+    const [actionFilter, setActionFilter] = useStateA("all");
+    const [fieldFilter, setFieldFilter] = useStateA("all");
+    const actions = [...new Set(entries.map((entry) => entry.action).filter(Boolean))];
+    const fields = [...new Set(entries.map((entry) => entry.fieldLabel).filter(Boolean))];
+    const query = search.trim().toLowerCase();
+    const filteredEntries = entries.filter((entry) => {
+      const matchesSearch = !query || [entry.transactionCode, entry.productName, entry.action, entry.fieldLabel, entry.before, entry.after].some((value) => String(value || "").toLowerCase().includes(query));
+      const matchesAction = actionFilter === "all" || entry.action === actionFilter;
+      const matchesField = fieldFilter === "all" || entry.fieldLabel === fieldFilter;
+      return matchesSearch && matchesAction && matchesField;
+    });
+    return /* @__PURE__ */ React.createElement("div", { className: "modal-bg history-modal-bg", onClick: onClose }, /* @__PURE__ */ React.createElement("div", { className: "modal history-modal", onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { className: "modal-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "modal-title" }, /* @__PURE__ */ React.createElement("span", { className: "accent" }), "L\u1ECACH S\u1EEC S\u1EECA \u0110\u1ED4I PHI\xCAN HI\u1EC6N T\u1EA0I"), /* @__PURE__ */ React.createElement("div", { className: "card-sub" }, "Theo d\xF5i t\u1EEB l\xFAc t\u1EA3i d\u1EEF li\u1EC7u ", " ", startedAt ? new Date(startedAt).toLocaleString("vi-VN") : "")), /* @__PURE__ */ React.createElement("button", { className: "close-x", onClick: onClose }, "\xD7")), /* @__PURE__ */ React.createElement("div", { className: "history-filterbar" }, /* @__PURE__ */ React.createElement("input", { value: search, onChange: (e) => setSearch(e.target.value), placeholder: "T\xECm m\xE3 GD, s\u1EA3n ph\u1EA9m, gi\xE1 tr\u1ECB..." }), /* @__PURE__ */ React.createElement("select", { value: actionFilter, onChange: (e) => setActionFilter(e.target.value) }, /* @__PURE__ */ React.createElement("option", { value: "all" }, "T\u1EA5t c\u1EA3 h\xE0nh \u0111\u1ED9ng"), actions.map((action) => /* @__PURE__ */ React.createElement("option", { key: action, value: action }, action))), /* @__PURE__ */ React.createElement("select", { value: fieldFilter, onChange: (e) => setFieldFilter(e.target.value) }, /* @__PURE__ */ React.createElement("option", { value: "all" }, "T\u1EA5t c\u1EA3 tr\u01B0\u1EDDng"), fields.map((field) => /* @__PURE__ */ React.createElement("option", { key: field, value: field }, field))), /* @__PURE__ */ React.createElement("span", { className: "history-count mono" }, filteredEntries.length, "/", entries.length)), /* @__PURE__ */ React.createElement("div", { className: "modal-body history-modal-body" }, /* @__PURE__ */ React.createElement("div", { className: "tbl-wrap history-modal-table-wrap" }, /* @__PURE__ */ React.createElement("table", { className: "tbl change-history-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "Th\u1EDDi \u0111i\u1EC3m"), /* @__PURE__ */ React.createElement("th", null, "H\xE0nh \u0111\u1ED9ng"), /* @__PURE__ */ React.createElement("th", null, "M\xE3 GD"), /* @__PURE__ */ React.createElement("th", null, "S\u1EA3n ph\u1EA9m"), /* @__PURE__ */ React.createElement("th", null, "Tr\u01B0\u1EDDng thay \u0111\u1ED5i"), /* @__PURE__ */ React.createElement("th", null, "Gi\xE1 tr\u1ECB c\u0169"), /* @__PURE__ */ React.createElement("th", null, "Gi\xE1 tr\u1ECB m\u1EDBi"))), /* @__PURE__ */ React.createElement("tbody", null, filteredEntries.slice().sort((a, b) => new Date(b.changedAt) - new Date(a.changedAt)).map((entry) => /* @__PURE__ */ React.createElement("tr", { key: entry.id }, /* @__PURE__ */ React.createElement("td", { className: "mono", style: { fontSize: 12 } }, new Date(entry.changedAt).toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("span", { className: "history-action" }, entry.action)), /* @__PURE__ */ React.createElement("td", { className: "mono txn-code" }, entry.transactionCode), /* @__PURE__ */ React.createElement("td", null, entry.productName), /* @__PURE__ */ React.createElement("td", null, entry.fieldLabel), /* @__PURE__ */ React.createElement("td", { className: "history-before" }, entry.before), /* @__PURE__ */ React.createElement("td", { className: "history-after" }, entry.after))), filteredEntries.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "7", className: "empty" }, "Kh\xF4ng c\xF3 l\u1ECBch s\u1EED ph\xF9 h\u1EE3p v\u1EDBi b\u1ED9 l\u1ECDc hi\u1EC7n t\u1EA1i."))))))));
   }
   function AppToast({ toast }) {
     return /* @__PURE__ */ React.createElement("div", { className: `app-toast ${toast.type}` }, /* @__PURE__ */ React.createElement("div", { className: "app-toast-icon" }, toast.type === "restore" ? "\u21BA" : toast.type === "warning" ? "!" : "\u2713"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "app-toast-title" }, toast.title), /* @__PURE__ */ React.createElement("div", { className: "app-toast-message" }, toast.message)));

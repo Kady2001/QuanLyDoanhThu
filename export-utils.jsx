@@ -28,17 +28,45 @@ function exportDaysInStock(arrived, today) {
   return Math.max(0, Math.floor((end - start) / 86400000));
 }
 
+function exportCodeDatePart(dateValue) {
+  const d = dateValue ? new Date(dateValue) : new Date();
+  const safe = Number.isNaN(d.getTime()) ? new Date() : d;
+  return `${safe.getFullYear()}${String(safe.getMonth() + 1).padStart(2, '0')}${String(safe.getDate()).padStart(2, '0')}`;
+}
+
+function exportNextTransactionCode(existingCodes, dateValue) {
+  const prefix = `NG-${exportCodeDatePart(dateValue)}-`;
+  const maxSeq = [...existingCodes].reduce((max, code) => {
+    if (!String(code || '').startsWith(prefix)) return max;
+    const seq = Number(String(code).slice(prefix.length));
+    return Number.isFinite(seq) ? Math.max(max, seq) : max;
+  }, 0);
+  return `${prefix}${String(maxSeq + 1).padStart(4, '0')}`;
+}
+
+function exportEnsureTransactionCodes(rows) {
+  const usedCodes = new Set();
+  return (rows || []).map(unit => {
+    const current = unit.transactionCode;
+    const transactionCode = current && !usedCodes.has(current)
+      ? current
+      : exportNextTransactionCode(usedCodes, unit.arrived);
+    usedCodes.add(transactionCode);
+    return { ...unit, transactionCode };
+  });
+}
+
 function normalizeUnitsForExport(units, today) {
-  return window.ensureTransactionCodes(units).map(unit => {
+  return exportEnsureTransactionCodes(units).map(unit => {
     const buy = exportSafeNumber(unit.buy);
     const expectedSell = exportSafeNumber(unit.expectedSell, buy);
-    const status = unit.status === 'sold' ? 'sold' : 'in_stock';
+    const status = unit.status === 'sold' ? 'sold' : unit.status === 'returned' ? 'returned' : 'in_stock';
     const arrived = exportSafeIsoDate(unit.arrived);
     const sell = status === 'sold'
       ? exportSafeNumber(unit.sell, expectedSell || buy)
       : null;
     const sold = status === 'sold' ? exportSafeIsoDate(unit.sold || unit.arrived) : '';
-    const profit = status === 'sold' ? sell - buy : expectedSell - buy;
+    const profit = status === 'sold' ? sell - buy : status === 'returned' ? 0 : expectedSell - buy;
 
     return {
       ...unit,
@@ -50,7 +78,7 @@ function normalizeUnitsForExport(units, today) {
       sold,
       profit,
       ratio: buy > 0
-        ? ((status === 'sold' ? sell : expectedSell) / buy)
+        ? (status === 'returned' ? null : ((status === 'sold' ? sell : expectedSell) / buy))
         : null,
       categoryName: exportCategoryName(unit.cat),
       daysInStock: status === 'in_stock' ? exportDaysInStock(arrived, today) : '',
@@ -279,16 +307,43 @@ function buildSoldExportSheet(soldRows, today) {
   return sheet;
 }
 
+function buildReturnedExportSheet(returnedRows, today) {
+  const rows = returnedRows
+    .slice()
+    .sort((a, b) => new Date(b.arrived) - new Date(a.arrived));
+  return XLSX.utils.aoa_to_sheet([
+    ['HÀNG HOÀN'],
+    [`Xuất lúc ${new Date().toLocaleString('vi-VN')} · danh sách tham chiếu, không cộng vào thống kê tiền`],
+    ['Ngày dữ liệu', exportDateCell(today)],
+    [],
+    ['Mã giao dịch', 'Dòng sản phẩm', 'Phân loại', 'Danh mục', 'Giá mua tham chiếu (nghìn VND)', 'Giá bán dự kiến tham chiếu', 'Ngày nhập', 'Ghi chú'],
+    ...rows.map(unit => [
+      unit.transactionCode,
+      unit.name || '',
+      unit.variant || '',
+      unit.categoryName,
+      unit.buy,
+      unit.expectedSell,
+      exportDateCell(unit.arrived),
+      unit.note || '',
+    ]),
+  ]);
+}
+
 function buildSalesWorkbook(units, today) {
   const normalized = normalizeUnitsForExport(units, today);
   const inStock = normalized.filter(unit => unit.status === 'in_stock');
   const sold = normalized.filter(unit => unit.status === 'sold');
+  const returned = normalized.filter(unit => unit.status === 'returned');
   const workbook = XLSX.utils.book_new();
 
   XLSX.utils.book_append_sheet(workbook, buildInventoryExportSheet(inStock, today), 'Kho_hang');
   XLSX.utils.book_append_sheet(workbook, buildSoldExportSheet(sold, today), 'Don_da_ban');
+  if (returned.length > 0) {
+    XLSX.utils.book_append_sheet(workbook, buildReturnedExportSheet(returned, today), 'Hang_hoan');
+  }
 
-  return { workbook, inStock, sold };
+  return { workbook, inStock, sold, returned };
 }
 
 async function exportSalesWorkbook(units, today) {
@@ -350,5 +405,6 @@ Object.assign(window, {
   ExportDataButton,
   buildSalesWorkbook,
   exportSalesWorkbook,
+  exportEnsureTransactionCodes,
   normalizeUnitsForExport,
 });

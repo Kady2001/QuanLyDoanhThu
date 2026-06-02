@@ -1,8 +1,1550 @@
 {
-  "version": 231,
-  "updatedAt": "2026-05-21T18:51:26.241Z",
+  "version": 489,
+  "updatedAt": "2026-06-02T18:26:17.247Z",
   "state": {
     "units": [
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 451,
+        "expectedSell": 451,
+        "arrived": "2026-06-02",
+        "note": "Acc Mẹ",
+        "status": "in_stock",
+        "id": "manual_1780424776978_0",
+        "transactionCode": "NG-20260602-0022"
+      },
+      {
+        "productLineId": "man-zsus",
+        "variantId": "man-zsus-14in-2k",
+        "name": "Màn Zsus",
+        "cat": "monitor",
+        "variant": "14in 2k",
+        "buy": 906,
+        "expectedSell": 906,
+        "arrived": "2026-06-02",
+        "note": "Acc Chính",
+        "status": "in_stock",
+        "id": "manual_1780422716406_0",
+        "transactionCode": "NG-20260602-0021"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 539,
+        "expectedSell": 539,
+        "arrived": "2026-06-02",
+        "note": "Acc Duc",
+        "status": "in_stock",
+        "id": "manual_1780422309134_0",
+        "transactionCode": "NG-20260602-0019"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 539,
+        "expectedSell": 539,
+        "arrived": "2026-06-02",
+        "note": "Acc Duc",
+        "status": "in_stock",
+        "id": "manual_1780422309134_1",
+        "transactionCode": "NG-20260602-0020"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 504,
+        "expectedSell": 504,
+        "arrived": "2026-06-03",
+        "note": "Per3",
+        "status": "in_stock",
+        "id": "manual_1780422103295_0",
+        "transactionCode": "NG-20260603-0006"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 504,
+        "expectedSell": 504,
+        "arrived": "2026-06-03",
+        "note": "Per3",
+        "status": "in_stock",
+        "id": "manual_1780422064205_0",
+        "transactionCode": "NG-20260603-0004"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 504,
+        "expectedSell": 504,
+        "arrived": "2026-06-03",
+        "note": "Per3",
+        "status": "in_stock",
+        "id": "manual_1780422064205_1",
+        "transactionCode": "NG-20260603-0005"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 451,
+        "expectedSell": 451,
+        "arrived": "2026-06-03",
+        "note": "Acc Per3",
+        "status": "in_stock",
+        "id": "manual_1780422022849_0",
+        "transactionCode": "NG-20260603-0002"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 451,
+        "expectedSell": 451,
+        "arrived": "2026-06-03",
+        "note": "Acc Per3",
+        "status": "in_stock",
+        "id": "manual_1780422022849_1",
+        "transactionCode": "NG-20260603-0003"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 450,
+        "expectedSell": 450,
+        "arrived": "2026-06-02",
+        "note": "Acc 593",
+        "status": "in_stock",
+        "id": "manual_1780419840436_0",
+        "transactionCode": "NG-20260602-0018"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-may",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Mây",
+        "buy": 504,
+        "expectedSell": 504,
+        "arrived": "2026-06-03",
+        "note": "Acc Hong Phong",
+        "status": "in_stock",
+        "id": "manual_1780419638891_0",
+        "transactionCode": "NG-20260603-0001"
+      },
+      {
+        "productLineId": "kecap-carbon",
+        "variantId": "kecap-carbon-trang",
+        "name": "Kecap Carbon",
+        "cat": "keycap",
+        "variant": "Trăng",
+        "buy": 80,
+        "expectedSell": 80,
+        "arrived": "2026-06-02",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780419567945_0",
+        "transactionCode": "NG-20260602-0017"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 460,
+        "expectedSell": 460,
+        "arrived": "2026-06-02",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780419538184_0",
+        "transactionCode": "NG-20260602-0016"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-may",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Mây",
+        "buy": 539,
+        "expectedSell": 539,
+        "arrived": "2026-06-02",
+        "note": "Acc Duyen",
+        "status": "in_stock",
+        "id": "manual_1780419199952_1",
+        "transactionCode": "NG-20260602-0015"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 539,
+        "expectedSell": 539,
+        "arrived": "2026-06-02",
+        "note": "Acc Duyen",
+        "status": "in_stock",
+        "id": "manual_1780419165079_0",
+        "transactionCode": "NG-20260602-0012"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 539,
+        "expectedSell": 539,
+        "arrived": "2026-06-02",
+        "note": "Acc Duyen",
+        "status": "in_stock",
+        "id": "manual_1780419165079_1",
+        "transactionCode": "NG-20260602-0013"
+      },
+      {
+        "productLineId": "man-lalipu",
+        "variantId": "man-lalipu-16in-fullhd-120hz",
+        "name": "Màn Lalipu",
+        "cat": "monitor",
+        "variant": "16in Fullhd 120hz",
+        "buy": 970,
+        "expectedSell": 970,
+        "arrived": "2026-06-02",
+        "note": "Acc Duyen",
+        "status": "in_stock",
+        "id": "manual_1780419084285_0",
+        "transactionCode": "NG-20260602-0011"
+      },
+      {
+        "productLineId": "man-lalipu",
+        "variantId": "man-lalipu-14in-fullhd",
+        "name": "Màn Lalipu",
+        "cat": "monitor",
+        "variant": "14in Fullhd",
+        "buy": 641,
+        "expectedSell": 641,
+        "arrived": "2026-06-02",
+        "note": "Acc Duyen",
+        "status": "in_stock",
+        "id": "manual_1780418692861_0",
+        "transactionCode": "NG-20260602-0010"
+      },
+      {
+        "productLineId": "man-lalipu",
+        "variantId": "man-lalipu-14in-fhd-100-srgb",
+        "name": "Màn Lalipu",
+        "cat": "monitor",
+        "variant": "14in Fhd 100% Srgb",
+        "buy": 607,
+        "expectedSell": 607,
+        "arrived": "2026-05-31",
+        "note": "Acc Duyen",
+        "status": "in_stock",
+        "id": "manual_1780418628473_0",
+        "transactionCode": "NG-20260602-0009"
+      },
+      {
+        "productLineId": "man-zsus",
+        "variantId": "man-zsus-14in-2k",
+        "name": "Màn Zsus",
+        "cat": "monitor",
+        "variant": "14in 2k",
+        "buy": 934,
+        "expectedSell": 934,
+        "arrived": "2026-06-02",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780345582135_0",
+        "transactionCode": "NG-20260602-0008"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-max",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "Max",
+        "buy": 705,
+        "expectedSell": 705,
+        "arrived": "2026-06-02",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780345490816_0",
+        "transactionCode": "NG-20260602-0007"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 504,
+        "expectedSell": 504,
+        "arrived": "2026-06-02",
+        "note": "Acc Phong",
+        "status": "in_stock",
+        "id": "manual_1780345470389_0",
+        "transactionCode": "NG-20260602-0006"
+      },
+      {
+        "productLineId": "man-lalipu",
+        "variantId": "man-lalipu-16in-fullhd-120hz",
+        "name": "Màn Lalipu",
+        "cat": "monitor",
+        "variant": "16in Fullhd 120hz",
+        "buy": 935,
+        "expectedSell": 935,
+        "arrived": "2026-06-02",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780345226310_0",
+        "transactionCode": "NG-20260602-0005"
+      },
+      {
+        "productLineId": "switch",
+        "variantId": "switch-leobog",
+        "name": "Switch",
+        "cat": "accessory",
+        "variant": "Leobog",
+        "buy": 80,
+        "expectedSell": 80,
+        "arrived": "2026-06-02",
+        "note": "",
+        "status": "sold",
+        "id": "manual_1780342859198_0",
+        "transactionCode": "NG-20260602-0004",
+        "sell": 100,
+        "sold": "2026-06-02"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 451,
+        "expectedSell": 451,
+        "arrived": "2026-06-02",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780342208124_0",
+        "transactionCode": "NG-20260602-0003"
+      },
+      {
+        "productLineId": "man-lalipu",
+        "variantId": "man-lalipu-14in-fullhd",
+        "name": "Màn Lalipu",
+        "cat": "monitor",
+        "variant": "14in Fullhd",
+        "buy": 730,
+        "expectedSell": 730,
+        "arrived": "2026-06-02",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780342186297_0",
+        "transactionCode": "NG-20260602-0002"
+      },
+      {
+        "productLineId": "man-lalipu",
+        "variantId": "man-lalipu-15-6-fhd-cam-ung",
+        "name": "Màn Lalipu",
+        "cat": "monitor",
+        "variant": "15.6 Fhd Cảm Ứng",
+        "buy": 1040,
+        "expectedSell": 1040,
+        "arrived": "2026-06-02",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780342146750_0",
+        "transactionCode": "NG-20260602-0001"
+      },
+      {
+        "productLineId": "line-hero68",
+        "variantId": "line-hero68-air",
+        "name": "Hero68",
+        "cat": "keyboard",
+        "variant": "Air",
+        "buy": 675,
+        "expectedSell": 675,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780245762390_0",
+        "transactionCode": "NG-20260531-0023"
+      },
+      {
+        "productLineId": "man-lalipu",
+        "variantId": "man-lalipu-16in-2k",
+        "name": "Màn Lalipu",
+        "cat": "monitor",
+        "variant": "16in 2k",
+        "buy": 1009,
+        "expectedSell": 1009,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780245315286_0",
+        "transactionCode": "NG-20260531-0022"
+      },
+      {
+        "productLineId": "man-zsus",
+        "variantId": "man-zsus-16in-full-hd",
+        "name": "Màn Zsus",
+        "cat": "monitor",
+        "variant": "16in Full Hd",
+        "buy": 766,
+        "expectedSell": 766,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780245269023_0",
+        "transactionCode": "NG-20260531-0021"
+      },
+      {
+        "productLineId": "man-zsus",
+        "variantId": "man-zsus-16in-full-hd",
+        "name": "Màn Zsus",
+        "cat": "monitor",
+        "variant": "16in Full Hd",
+        "buy": 766,
+        "expectedSell": 766,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780245188907_0",
+        "transactionCode": "NG-20260531-0020"
+      },
+      {
+        "productLineId": "man-lalipu",
+        "variantId": "man-lalipu-16in-fullhd-120hz",
+        "name": "Màn Lalipu",
+        "cat": "monitor",
+        "variant": "16in Fullhd 120hz",
+        "buy": 740,
+        "expectedSell": 740,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780243418191_0",
+        "transactionCode": "NG-20260531-0019"
+      },
+      {
+        "productLineId": "man-lalipu",
+        "variantId": "man-lalipu-16in-fullhd-120hz",
+        "name": "Màn Lalipu",
+        "cat": "monitor",
+        "variant": "16in Fullhd 120hz",
+        "buy": 862,
+        "expectedSell": 862,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780242499990_0",
+        "transactionCode": "NG-20260531-0018"
+      },
+      {
+        "productLineId": "keycap-pudding",
+        "variantId": "keycap-pudding-hong",
+        "name": "Keycap Pudding",
+        "cat": "keycap",
+        "variant": "Hồng",
+        "buy": 80,
+        "expectedSell": 80,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780242096790_0",
+        "transactionCode": "NG-20260531-0017"
+      },
+      {
+        "productLineId": "line-hero68",
+        "variantId": "variant-hero68-mac-inh",
+        "name": "Hero68",
+        "cat": "keyboard",
+        "variant": "Mặc Định",
+        "buy": 464,
+        "expectedSell": 464,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780242079248_0",
+        "transactionCode": "NG-20260531-0016"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "variant-f75-mac-inh",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "Mặc Định",
+        "buy": 563,
+        "expectedSell": 563,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780241896475_0",
+        "transactionCode": "NG-20260531-0015"
+      },
+      {
+        "productLineId": "keycap-pudding",
+        "variantId": "keycap-pudding-trang",
+        "name": "Keycap Pudding",
+        "cat": "keycap",
+        "variant": "Trắng",
+        "buy": 80,
+        "expectedSell": 80,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "sold",
+        "id": "manual_1780241841616_0",
+        "transactionCode": "NG-20260531-0014",
+        "sell": 190,
+        "sold": "2026-06-02"
+      },
+      {
+        "productLineId": "line-hero68",
+        "variantId": "variant-hero68-mac-inh",
+        "name": "Hero68",
+        "cat": "keyboard",
+        "variant": "Mặc Định",
+        "buy": 480,
+        "expectedSell": 480,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780241807485_0",
+        "transactionCode": "NG-20260531-0013"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 551,
+        "expectedSell": 551,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780241759203_0",
+        "transactionCode": "NG-20260531-0012"
+      },
+      {
+        "productLineId": "line-s75-pro-en-hong",
+        "variantId": "line-s75-pro-en-hong-trang-xanh",
+        "name": "S75 Pro",
+        "cat": "keyboard",
+        "variant": "Trắng Xanh",
+        "buy": 630,
+        "expectedSell": 630,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780241742165_0",
+        "transactionCode": "NG-20260531-0011"
+      },
+      {
+        "productLineId": "xinmeng-zero68",
+        "variantId": "xinmeng-zero68-en",
+        "name": "Xinmeng Zero68",
+        "cat": "keyboard",
+        "variant": "Đen",
+        "buy": 601,
+        "expectedSell": 601,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780240109982_0",
+        "transactionCode": "NG-20260531-0010"
+      },
+      {
+        "productLineId": "hi75c-pro",
+        "variantId": "hi75c-pro-kit-xanh-la",
+        "name": "Hi75c Pro",
+        "cat": "keyboard",
+        "variant": "Kit Xanh La",
+        "buy": 494,
+        "expectedSell": 494,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780239928843_0",
+        "transactionCode": "NG-20260531-0009"
+      },
+      {
+        "productLineId": "line-hero68",
+        "variantId": "line-hero68-air",
+        "name": "Hero68",
+        "cat": "keyboard",
+        "variant": "Air",
+        "buy": 675,
+        "expectedSell": 675,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780239712065_0",
+        "transactionCode": "NG-20260531-0008"
+      },
+      {
+        "productLineId": "man-zsus",
+        "variantId": "man-zsus-14in-fullhd-cam-ung",
+        "name": "Màn Zsus",
+        "cat": "monitor",
+        "variant": "14in Fullhd Cảm Ứng",
+        "buy": 1088,
+        "expectedSell": 1088,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780225720503_0",
+        "transactionCode": "NG-20260531-0007"
+      },
+      {
+        "productLineId": "switch",
+        "variantId": "switch-sw-leobog",
+        "name": "Switch",
+        "cat": "accessory",
+        "variant": "Sw Leobog",
+        "buy": 80,
+        "expectedSell": 80,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "sold",
+        "id": "manual_1780220934581_0",
+        "transactionCode": "NG-20260531-0006",
+        "sell": 105,
+        "sold": "2026-05-31"
+      },
+      {
+        "productLineId": "keycap-polar-2",
+        "variantId": "keycap-polar-2-xam",
+        "name": "Keycap Polar",
+        "cat": "keycap",
+        "variant": "Xám",
+        "buy": 80,
+        "expectedSell": 80,
+        "arrived": "2026-05-31",
+        "note": "Cod",
+        "status": "sold",
+        "id": "manual_1780220844193_0",
+        "transactionCode": "NG-20260531-0005",
+        "sell": 130,
+        "sold": "2026-05-31"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 541,
+        "expectedSell": 541,
+        "arrived": "2026-05-29",
+        "note": "Ship Hỏa Tốc",
+        "status": "sold",
+        "id": "manual_1780219157935_0",
+        "transactionCode": "NG-20260529-0002",
+        "sell": 585,
+        "sold": "2026-05-31"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 568,
+        "expectedSell": 568,
+        "arrived": "2026-05-29",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780206984772_0",
+        "transactionCode": "NG-20260529-0001"
+      },
+      {
+        "productLineId": "line-s75-pro-en-hong",
+        "variantId": "line-s75-pro-en-hong-en-hong",
+        "name": "S75 Pro",
+        "cat": "keyboard",
+        "variant": "Đen Hồng",
+        "buy": 612,
+        "expectedSell": 612,
+        "arrived": "2026-05-31",
+        "note": "Per 3",
+        "status": "in_stock",
+        "id": "manual_1780172607645_0",
+        "transactionCode": "NG-20260531-0004"
+      },
+      {
+        "productLineId": "man-lalipu",
+        "variantId": "man-lalipu-mac-dinh",
+        "name": "Màn Lalipu",
+        "cat": "monitor",
+        "variant": "Mặc Định",
+        "buy": 762,
+        "expectedSell": 762,
+        "arrived": "2026-05-30",
+        "note": "Acc Per3",
+        "status": "in_stock",
+        "id": "manual_1780172579204_0",
+        "transactionCode": "NG-20260530-0001"
+      },
+      {
+        "productLineId": "line-hero68",
+        "variantId": "line-hero68-air",
+        "name": "Hero68",
+        "cat": "keyboard",
+        "variant": "Air",
+        "buy": 637,
+        "expectedSell": 637,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780172460742_0",
+        "transactionCode": "NG-20260531-0003"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 535,
+        "expectedSell": 535,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "sold",
+        "id": "manual_1780171790826_0",
+        "transactionCode": "NG-20260531-0002",
+        "sell": 600,
+        "sold": "2026-05-31"
+      },
+      {
+        "productLineId": "celtic-98",
+        "variantId": "celtic-98-trang-1-mode",
+        "name": "Celtic 98",
+        "cat": "keyboard",
+        "variant": "Trắng 1 Mode",
+        "buy": 515,
+        "expectedSell": 515,
+        "arrived": "2026-05-31",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780171737896_0",
+        "transactionCode": "NG-20260531-0001"
+      },
+      {
+        "productLineId": "line-hero68",
+        "variantId": "line-hero68-air",
+        "name": "Hero68",
+        "cat": "keyboard",
+        "variant": "Air",
+        "buy": 670,
+        "expectedSell": 670,
+        "arrived": "2026-05-26",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1780162904489_0",
+        "transactionCode": "NG-20260526-0021"
+      },
+      {
+        "productLineId": "line-s75-pro-en-hong",
+        "variantId": "line-s75-pro-en-hong-en-hong",
+        "name": "S75 Pro",
+        "cat": "keyboard",
+        "variant": "Đen Hồng",
+        "buy": 593,
+        "expectedSell": 593,
+        "arrived": "2026-05-28",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779978664533_0",
+        "transactionCode": "NG-20260528-0011"
+      },
+      {
+        "productLineId": "lot-chuot",
+        "variantId": "lot-chuot-cam",
+        "name": "Lót Chuột",
+        "cat": "accessory",
+        "variant": "Cam",
+        "buy": 1,
+        "expectedSell": 1,
+        "arrived": "2026-05-28",
+        "note": "",
+        "status": "sold",
+        "id": "manual_1779975393066_0",
+        "transactionCode": "NG-20260528-0010",
+        "sell": 80,
+        "sold": "2026-05-28"
+      },
+      {
+        "productLineId": "hi75c-pro",
+        "variantId": "hi75c-pro-kit-xanh-duong",
+        "name": "Hi75c Pro",
+        "cat": "keyboard",
+        "variant": "Kit Xanh Dương",
+        "buy": 518,
+        "expectedSell": 518,
+        "arrived": "2026-05-28",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779912791282_0",
+        "transactionCode": "NG-20260528-0009"
+      },
+      {
+        "productLineId": "hi75c-pro",
+        "variantId": "hi75c-pro-nau-cafe",
+        "name": "Hi75c Pro",
+        "cat": "keyboard",
+        "variant": "Nâu Cafe",
+        "buy": 705,
+        "expectedSell": 705,
+        "arrived": "2026-05-28",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779912748594_0",
+        "transactionCode": "NG-20260528-0008"
+      },
+      {
+        "productLineId": "man-zsus",
+        "variantId": "man-zsus-16in-full-hd",
+        "name": "Màn Zsus",
+        "cat": "monitor",
+        "variant": "16in Full Hd",
+        "buy": 765,
+        "expectedSell": 765,
+        "arrived": "2026-05-28",
+        "note": "Ship Timecity",
+        "status": "sold",
+        "id": "manual_1779912588797_0",
+        "transactionCode": "NG-20260528-0007",
+        "sell": 1200,
+        "sold": "2026-05-30"
+      },
+      {
+        "productLineId": "keycap-polar",
+        "variantId": "keycap-polar-polar-hong",
+        "name": "Keycap Polar",
+        "cat": "keycap",
+        "variant": "Polar Hồng",
+        "buy": 80,
+        "expectedSell": 80,
+        "arrived": "2026-05-28",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779912472195_0",
+        "transactionCode": "NG-20260528-0006"
+      },
+      {
+        "productLineId": "line-s75-pro-en-hong",
+        "variantId": "line-s75-pro-en-hong-hong",
+        "name": "S75 Pro",
+        "cat": "keyboard",
+        "variant": "Hồng",
+        "buy": 618,
+        "expectedSell": 618,
+        "arrived": "2026-05-28",
+        "note": "Srv",
+        "status": "sold",
+        "id": "manual_1779912436278_0",
+        "transactionCode": "NG-20260528-0005",
+        "sell": 710,
+        "sold": "2026-05-31"
+      },
+      {
+        "productLineId": "line-s75-pro-en-hong",
+        "variantId": "line-s75-pro-en-hong-trang-xanh",
+        "name": "S75 Pro",
+        "cat": "keyboard",
+        "variant": "Trắng Xanh",
+        "buy": 597,
+        "expectedSell": 597,
+        "arrived": "2026-05-28",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779912016244_0",
+        "transactionCode": "NG-20260528-0004"
+      },
+      {
+        "productLineId": "nova75",
+        "variantId": "nova75-base",
+        "name": "Nova75",
+        "cat": "keyboard",
+        "variant": "Base",
+        "buy": 640,
+        "expectedSell": 640,
+        "arrived": "2026-05-28",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779911979518_0",
+        "transactionCode": "NG-20260528-0003"
+      },
+      {
+        "productLineId": "nova75",
+        "variantId": "nova75-base",
+        "name": "Nova75",
+        "cat": "keyboard",
+        "variant": "Base",
+        "buy": 573,
+        "expectedSell": 573,
+        "arrived": "2026-05-28",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779911966688_0",
+        "transactionCode": "NG-20260528-0002"
+      },
+      {
+        "productLineId": "hi75c-pro",
+        "variantId": "hi75c-pro-trang-vali",
+        "name": "Hi75c Pro",
+        "cat": "keyboard",
+        "variant": "Trắng Vali",
+        "buy": 653,
+        "expectedSell": 653,
+        "arrived": "2026-05-28",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779910092616_0",
+        "transactionCode": "NG-20260528-0001"
+      },
+      {
+        "productLineId": "keycap-trong-suot",
+        "variantId": "keycap-trong-suot-hong",
+        "name": "Keycap Trong Suốt",
+        "cat": "keycap",
+        "variant": "Hồng",
+        "buy": 120,
+        "expectedSell": 120,
+        "arrived": "2026-05-16",
+        "note": "Cod",
+        "status": "sold",
+        "id": "manual_1779812382166_0",
+        "transactionCode": "NG-20260516-0003",
+        "sell": 160,
+        "sold": "2026-05-29"
+      },
+      {
+        "productLineId": "keycap-trong-suot",
+        "variantId": "keycap-trong-suot-hong",
+        "name": "Keycap Trong Suốt",
+        "cat": "keycap",
+        "variant": "Hồng",
+        "buy": 120,
+        "expectedSell": 120,
+        "arrived": "2026-05-16",
+        "note": "",
+        "status": "sold",
+        "id": "manual_1779812382166_1",
+        "transactionCode": "NG-20260516-0004",
+        "sell": 160,
+        "sold": "2026-05-26"
+      },
+      {
+        "productLineId": "hi75c-pro",
+        "variantId": "hi75c-pro-nau-cafe",
+        "name": "Hi75c Pro",
+        "cat": "keyboard",
+        "variant": "Nâu Cafe",
+        "buy": 705,
+        "expectedSell": 705,
+        "arrived": "2026-05-26",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779812261725_0",
+        "transactionCode": "NG-20260526-0020"
+      },
+      {
+        "productLineId": "hi75c-pro",
+        "variantId": "hi75c-pro-trang-vali",
+        "name": "Hi75c Pro",
+        "cat": "keyboard",
+        "variant": "Trắng Vali",
+        "buy": 654,
+        "expectedSell": 654,
+        "arrived": "2026-05-26",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779812180152_0",
+        "transactionCode": "NG-20260526-0019"
+      },
+      {
+        "productLineId": "nova75",
+        "variantId": "nova75-pro",
+        "name": "Nova75",
+        "cat": "keyboard",
+        "variant": "Pro",
+        "buy": 627,
+        "expectedSell": 627,
+        "arrived": "2026-05-26",
+        "note": "Acc Per 3",
+        "status": "in_stock",
+        "id": "manual_1779812156983_0",
+        "transactionCode": "NG-20260526-0018"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-may",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Mây",
+        "buy": 534,
+        "expectedSell": 534,
+        "arrived": "2026-05-26",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779812031894_0",
+        "transactionCode": "NG-20260526-0017"
+      },
+      {
+        "productLineId": "man-zsus",
+        "variantId": "man-zsus-16in-2k",
+        "name": "Màn Zsus",
+        "cat": "monitor",
+        "variant": "16in 2k",
+        "buy": 1452,
+        "expectedSell": 1452,
+        "arrived": "2026-05-26",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779812007700_0",
+        "transactionCode": "NG-20260526-0016"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 566,
+        "expectedSell": 566,
+        "arrived": "2026-05-26",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779811920932_0",
+        "transactionCode": "NG-20260526-0015"
+      },
+      {
+        "productLineId": "line-s75-pro-en-hong",
+        "variantId": "line-s75-pro-en-hong-en-hong",
+        "name": "S75 Pro",
+        "cat": "keyboard",
+        "variant": "Đen Hồng",
+        "buy": 598,
+        "expectedSell": 598,
+        "arrived": "2026-05-26",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779811863373_0",
+        "transactionCode": "NG-20260526-0014"
+      },
+      {
+        "productLineId": "man-zsus",
+        "variantId": "man-zsus-16in-full-hd",
+        "name": "Màn Zsus",
+        "cat": "monitor",
+        "variant": "16in Full Hd",
+        "buy": 715,
+        "expectedSell": 715,
+        "arrived": "2026-05-26",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779811834409_0",
+        "transactionCode": "NG-20260526-0013"
+      },
+      {
+        "productLineId": "man-zsus",
+        "variantId": "man-zsus-14in-2k",
+        "name": "Màn Zsus",
+        "cat": "monitor",
+        "variant": "14in 2k",
+        "buy": 1178,
+        "expectedSell": 1178,
+        "arrived": "2026-05-26",
+        "note": "Bh 30",
+        "status": "sold",
+        "id": "manual_1779811530741_0",
+        "transactionCode": "NG-20260526-0012",
+        "sell": 1300,
+        "sold": "2026-05-28"
+      },
+      {
+        "productLineId": "hi75c-pro",
+        "variantId": "hi75c-pro-en-luong-tu",
+        "name": "Hi75c Pro",
+        "cat": "keyboard",
+        "variant": "Đen Lượng Tử",
+        "buy": 752,
+        "expectedSell": 752,
+        "arrived": "2026-05-26",
+        "note": "Ship SRV",
+        "status": "sold",
+        "id": "manual_1779811473503_0",
+        "transactionCode": "NG-20260526-0010",
+        "sell": 860,
+        "sold": "2026-05-27"
+      },
+      {
+        "productLineId": "hi75c-pro",
+        "variantId": "hi75c-pro-en-luong-tu",
+        "name": "Hi75c Pro",
+        "cat": "keyboard",
+        "variant": "Đen Lượng Tử",
+        "buy": 752,
+        "expectedSell": 752,
+        "arrived": "2026-05-26",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779811473503_1",
+        "transactionCode": "NG-20260526-0011"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 566,
+        "expectedSell": 566,
+        "arrived": "2026-05-26",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779811400201_0",
+        "transactionCode": "NG-20260526-0009"
+      },
+      {
+        "productLineId": "man-lalipu",
+        "variantId": "man-lalipu-14in-fhd-cam-ung",
+        "name": "Màn Lalipu",
+        "cat": "monitor",
+        "variant": "14in Fhd Cảm Ứng",
+        "buy": 937,
+        "expectedSell": 937,
+        "arrived": "2026-05-26",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779811381195_0",
+        "transactionCode": "NG-20260526-0008"
+      },
+      {
+        "productLineId": "man-lalipu",
+        "variantId": "man-lalipu-14in-2k",
+        "name": "Màn Lalipu",
+        "cat": "monitor",
+        "variant": "14in 2k",
+        "buy": 1008,
+        "expectedSell": 1008,
+        "arrived": "2026-05-25",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779805700338_0",
+        "transactionCode": "NG-20260525-0002"
+      },
+      {
+        "productLineId": "man-zsus",
+        "variantId": "man-zsus-16in-full-hd",
+        "name": "Màn Zsus",
+        "cat": "monitor",
+        "variant": "16in Full Hd",
+        "buy": 948,
+        "expectedSell": 948,
+        "arrived": "2026-05-26",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779733675789_0",
+        "transactionCode": "NG-20260526-0007"
+      },
+      {
+        "productLineId": "man-zsus",
+        "variantId": "man-zsus-16in-2k",
+        "name": "Màn Zsus",
+        "cat": "monitor",
+        "variant": "16in 2k",
+        "buy": 1453,
+        "expectedSell": 1453,
+        "arrived": "2026-05-26",
+        "note": "",
+        "status": "sold",
+        "id": "manual_1779733635428_0",
+        "transactionCode": "NG-20260526-0006",
+        "sell": 1700,
+        "sold": "2026-05-28"
+      },
+      {
+        "productLineId": "man-zsus",
+        "variantId": "man-zsus-14in-2k-cam-ung",
+        "name": "Màn Zsus",
+        "cat": "monitor",
+        "variant": "14in 2k Cảm Ứng.",
+        "buy": 1700,
+        "expectedSell": 1700,
+        "arrived": "2026-05-26",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779733506354_0",
+        "transactionCode": "NG-20260526-0005"
+      },
+      {
+        "productLineId": "bao-da-14in-2",
+        "variantId": "bao-da-14in-2-mac-dinh",
+        "name": "Bao Da 14in",
+        "cat": "accessory",
+        "variant": "Mặc Định",
+        "buy": 1,
+        "expectedSell": 1,
+        "arrived": "2026-05-26",
+        "note": "",
+        "status": "sold",
+        "id": "manual_1779730308787_0",
+        "transactionCode": "NG-20260526-0004",
+        "sell": 60,
+        "sold": "2026-05-26"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 566,
+        "expectedSell": 566,
+        "arrived": "2026-05-26",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779729012784_0",
+        "transactionCode": "NG-20260526-0002"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 566,
+        "expectedSell": 566,
+        "arrived": "2026-05-26",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779729012784_1",
+        "transactionCode": "NG-20260526-0003"
+      },
+      {
+        "productLineId": "hi75c-pro",
+        "variantId": "hi75c-pro-kit-xanh-la",
+        "name": "Hi75c Pro",
+        "cat": "keyboard",
+        "variant": "Kit Xanh La",
+        "buy": 497,
+        "expectedSell": 497,
+        "arrived": "2026-05-26",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779728892627_0",
+        "transactionCode": "NG-20260526-0001"
+      },
+      {
+        "productLineId": "keycap-lo",
+        "variantId": "keycap-lo-mac-dinh",
+        "name": "Keycap Lỏ",
+        "cat": "keycap",
+        "variant": "Mặc Định",
+        "buy": 1,
+        "expectedSell": 1,
+        "arrived": "2026-05-25",
+        "note": "",
+        "status": "sold",
+        "id": "manual_1779642484037_0",
+        "transactionCode": "NG-20260525-0001",
+        "sell": 80,
+        "sold": "2026-05-25"
+      },
+      {
+        "productLineId": "line-hero68",
+        "variantId": "variant-hero68-mac-inh",
+        "name": "Hero68",
+        "cat": "keyboard",
+        "variant": "Mặc Định",
+        "buy": 455,
+        "expectedSell": 455,
+        "arrived": "2026-05-24",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779637516526_0",
+        "transactionCode": "NG-20260524-0010"
+      },
+      {
+        "productLineId": "man-lalipu",
+        "variantId": "man-lalipu-14in-fhd-cam-ung",
+        "name": "Màn Lalipu",
+        "cat": "monitor",
+        "variant": "14in Fhd Cảm Ứng",
+        "buy": 1148,
+        "expectedSell": 1148,
+        "arrived": "2026-05-24",
+        "note": "Màn Lỗi Nhỏ",
+        "status": "sold",
+        "id": "manual_1779635026341_0",
+        "transactionCode": "NG-20260524-0009",
+        "sell": 1150,
+        "sold": "2026-05-29"
+      },
+      {
+        "productLineId": "line-hero68",
+        "variantId": "variant-hero68-mac-inh",
+        "name": "Hero68",
+        "cat": "keyboard",
+        "variant": "Mặc Định",
+        "buy": 460,
+        "expectedSell": 460,
+        "arrived": "2026-05-24",
+        "note": "Acc Per3",
+        "status": "in_stock",
+        "id": "manual_1779634851855_0",
+        "transactionCode": "NG-20260524-0008"
+      },
+      {
+        "productLineId": "man-zsus",
+        "variantId": "man-zsus-14in-2k-cam-ung",
+        "name": "Màn Zsus",
+        "cat": "monitor",
+        "variant": "14in 2k Cảm Ứng.",
+        "buy": 1900,
+        "expectedSell": 1900,
+        "arrived": "2026-05-24",
+        "note": "",
+        "status": "sold",
+        "id": "manual_1779625819670_0",
+        "transactionCode": "NG-20260524-0007",
+        "sell": 1900,
+        "sold": "2026-05-24"
+      },
+      {
+        "productLineId": "man-ktc",
+        "variantId": "man-ktc-mac-dinh",
+        "name": "Màn KTC",
+        "cat": "monitor",
+        "variant": "Mặc Định",
+        "buy": 878,
+        "expectedSell": 878,
+        "arrived": "2026-05-24",
+        "note": "Vỡ",
+        "status": "returned",
+        "id": "manual_1779563345861_0",
+        "transactionCode": "NG-20260524-0006"
+      },
+      {
+        "productLineId": "win60",
+        "variantId": "win60-trang",
+        "name": "Win60",
+        "cat": "keyboard",
+        "variant": "Trắng",
+        "buy": 274,
+        "expectedSell": 274,
+        "arrived": "2026-05-24",
+        "note": "Cod",
+        "status": "sold",
+        "id": "manual_1779562606637_0",
+        "transactionCode": "NG-20260524-0005",
+        "sell": 330,
+        "sold": "2026-06-02"
+      },
+      {
+        "productLineId": "line-hero68",
+        "variantId": "variant-hero68-mac-inh",
+        "name": "Hero68",
+        "cat": "keyboard",
+        "variant": "Mặc Định",
+        "buy": 506,
+        "expectedSell": 506,
+        "arrived": "2026-05-24",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779562547829_0",
+        "transactionCode": "NG-20260524-0004"
+      },
+      {
+        "productLineId": "chuot-leobog",
+        "variantId": "chuot-leobog-gm5-pro",
+        "name": "Chuột Leobog",
+        "cat": "mouse",
+        "variant": "Gm5 Pro",
+        "buy": 227,
+        "expectedSell": 227,
+        "arrived": "2026-05-24",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779562527125_0",
+        "transactionCode": "NG-20260524-0003"
+      },
+      {
+        "productLineId": "f108-pro",
+        "variantId": "f108-pro-xam-gradient",
+        "name": "F108 Pro",
+        "cat": "keyboard",
+        "variant": "Xám Gradient",
+        "buy": 870,
+        "expectedSell": 870,
+        "arrived": "2026-05-24",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779562458040_0",
+        "transactionCode": "NG-20260524-0002"
+      },
+      {
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang",
+        "name": "F75",
+        "cat": "keyboard",
+        "variant": "F75 Xanh Trắng",
+        "buy": 563,
+        "expectedSell": 563,
+        "arrived": "2026-05-24",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779561627317_0",
+        "transactionCode": "NG-20260524-0001"
+      },
+      {
+        "productLineId": "keycap-trong-suot",
+        "variantId": "keycap-trong-suot-o",
+        "name": "Keycap Trong Suốt",
+        "cat": "keycap",
+        "variant": "Đỏ",
+        "buy": 120,
+        "expectedSell": 120,
+        "arrived": "2026-05-23",
+        "note": "",
+        "status": "sold",
+        "id": "manual_1779536203656_0",
+        "transactionCode": "NG-20260523-0001",
+        "sell": 150,
+        "sold": "2026-05-23"
+      },
+      {
+        "productLineId": "hi75c-pro",
+        "variantId": "hi75c-pro-topo-en",
+        "name": "Hi75c Pro",
+        "cat": "keyboard",
+        "variant": "Topo Đen",
+        "buy": 754,
+        "expectedSell": 754,
+        "arrived": "2026-05-18",
+        "note": "Srv",
+        "status": "sold",
+        "id": "manual_1779478929765_0",
+        "transactionCode": "NG-20260518-0002",
+        "sell": 800,
+        "sold": "2026-05-20"
+      },
+      {
+        "productLineId": "chuot-leobog",
+        "variantId": "chuot-leobog-gm5-pro",
+        "name": "Chuột Leobog",
+        "cat": "mouse",
+        "variant": "Gm5 Pro",
+        "buy": 227,
+        "expectedSell": 227,
+        "arrived": "2026-05-22",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779469152601_0",
+        "transactionCode": "NG-20260522-0008"
+      },
+      {
+        "productLineId": "chuot-leobog",
+        "variantId": "chuot-leobog-gm5-pro",
+        "name": "Chuột Leobog",
+        "cat": "mouse",
+        "variant": "Gm5 Pro",
+        "buy": 227,
+        "expectedSell": 227,
+        "arrived": "2026-05-22",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779469152601_1",
+        "transactionCode": "NG-20260522-0009"
+      },
+      {
+        "productLineId": "chuot-leobog",
+        "variantId": "chuot-leobog-gm5-pro",
+        "name": "Chuột Leobog",
+        "cat": "mouse",
+        "variant": "Gm5 Pro",
+        "buy": 227,
+        "expectedSell": 227,
+        "arrived": "2026-05-22",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779469152601_2",
+        "transactionCode": "NG-20260522-0010"
+      },
+      {
+        "productLineId": "chuot-leobog",
+        "variantId": "chuot-leobog-gm5-pro",
+        "name": "Chuột Leobog",
+        "cat": "mouse",
+        "variant": "Gm5 Pro",
+        "buy": 227,
+        "expectedSell": 227,
+        "arrived": "2026-05-22",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779469152601_3",
+        "transactionCode": "NG-20260522-0011"
+      },
+      {
+        "productLineId": "chuot-leobog",
+        "variantId": "chuot-leobog-gm5se",
+        "name": "Chuột Leobog",
+        "cat": "mouse",
+        "variant": "Gm5se",
+        "buy": 162,
+        "expectedSell": 162,
+        "arrived": "2026-05-22",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779468944791_0",
+        "transactionCode": "NG-20260522-0007"
+      },
+      {
+        "productLineId": "line-s75-pro-en-hong",
+        "variantId": "line-s75-pro-en-hong-en-hong",
+        "name": "S75 Pro",
+        "cat": "keyboard",
+        "variant": "Đen Hồng",
+        "buy": 624,
+        "expectedSell": 624,
+        "arrived": "2026-05-22",
+        "note": "",
+        "status": "sold",
+        "id": "manual_1779468815031_0",
+        "transactionCode": "NG-20260522-0006",
+        "sell": 630,
+        "sold": "2026-05-22"
+      },
       {
         "productLineId": "man-ktc",
         "variantId": "man-ktc-mac-dinh",
@@ -13,9 +1555,71 @@
         "expectedSell": 878,
         "arrived": "2026-05-22",
         "note": "",
+        "status": "sold",
+        "id": "manual_1779468600020_0",
+        "transactionCode": "NG-20260522-0005",
+        "sell": 1100,
+        "sold": "2026-05-23"
+      },
+      {
+        "productLineId": "hi75c-pro",
+        "variantId": "hi75c-pro-trang-vali",
+        "name": "Hi75c Pro",
+        "cat": "keyboard",
+        "variant": "Trắng Vali",
+        "buy": 670,
+        "expectedSell": 670,
+        "arrived": "2026-05-22",
+        "note": "",
+        "status": "sold",
+        "id": "manual_1779468388259_0",
+        "transactionCode": "NG-20260522-0004",
+        "sell": 720,
+        "sold": "2026-05-22"
+      },
+      {
+        "productLineId": "chuot-leobog",
+        "variantId": "chuot-leobog-gm2-pro",
+        "name": "Chuột Leobog",
+        "cat": "mouse",
+        "variant": "Gm2 Pro",
+        "buy": 150,
+        "expectedSell": 150,
+        "arrived": "2026-05-22",
+        "note": "",
         "status": "in_stock",
+        "id": "manual_1779468319843_0",
+        "transactionCode": "NG-20260522-0003"
+      },
+      {
+        "productLineId": "line-man-16in-100-srgb",
+        "variantId": "variant-man-16in-100-srgb-mac-inh",
+        "name": "Màn 16in 100% Srgb",
+        "cat": "monitor",
+        "variant": "Mặc Định",
+        "buy": 1060,
+        "expectedSell": 1060,
+        "arrived": "2026-05-22",
+        "note": "",
+        "status": "in_stock",
+        "id": "manual_1779391907127_0",
+        "transactionCode": "NG-20260522-0002"
+      },
+      {
+        "productLineId": "man-ktc",
+        "variantId": "man-ktc-mac-dinh",
+        "name": "Màn KTC",
+        "cat": "monitor",
+        "variant": "Mặc Định",
+        "buy": 878,
+        "expectedSell": 878,
+        "arrived": "2026-05-22",
+        "note": "",
+        "status": "sold",
         "id": "manual_1779386357850_0",
-        "transactionCode": "NG-20260522-0001"
+        "transactionCode": "NG-20260522-0001",
+        "sell": 1100,
+        "sold": "2026-05-26"
       },
       {
         "productLineId": "line-s75-pro-en-hong",
@@ -27,9 +1631,11 @@
         "expectedSell": 596,
         "arrived": "2026-05-21",
         "note": "",
-        "status": "in_stock",
+        "status": "sold",
         "id": "manual_1779380734627_0",
-        "transactionCode": "NG-20260521-0010"
+        "transactionCode": "NG-20260521-0010",
+        "sell": 630,
+        "sold": "2026-05-22"
       },
       {
         "productLineId": "man-ktc",
@@ -83,9 +1689,11 @@
         "expectedSell": 599,
         "arrived": "2026-05-21",
         "note": "",
-        "status": "in_stock",
+        "status": "sold",
         "id": "manual_1779377661936_0",
-        "transactionCode": "NG-20260521-0006"
+        "transactionCode": "NG-20260521-0006",
+        "sell": 630,
+        "sold": "2026-05-22"
       },
       {
         "productLineId": "line-s75-pro-en-hong",
@@ -96,10 +1704,12 @@
         "buy": 624,
         "expectedSell": 624,
         "arrived": "2026-05-19",
-        "note": "Acc Long Nguyen",
-        "status": "in_stock",
+        "note": "",
+        "status": "sold",
         "id": "manual_1779377648950_0",
-        "transactionCode": "NG-20260519-0026"
+        "transactionCode": "NG-20260519-0026",
+        "sell": 630,
+        "sold": "2026-05-22"
       },
       {
         "productLineId": "man-ktc",
@@ -166,10 +1776,12 @@
         "buy": 354,
         "expectedSell": 354,
         "arrived": "2026-05-21",
-        "note": "",
-        "status": "in_stock",
+        "note": "Cod",
+        "status": "sold",
         "id": "manual_1779376136581_0",
-        "transactionCode": "NG-20260521-0005"
+        "transactionCode": "NG-20260521-0005",
+        "sell": 420,
+        "sold": "2026-05-30"
       },
       {
         "productLineId": "line-s75-pro-en-hong",
@@ -181,9 +1793,11 @@
         "expectedSell": 588,
         "arrived": "2026-05-21",
         "note": "",
-        "status": "in_stock",
+        "status": "sold",
         "id": "manual_1779305490460_0",
-        "transactionCode": "NG-20260521-0004"
+        "transactionCode": "NG-20260521-0004",
+        "sell": 645,
+        "sold": "2026-05-23"
       },
       {
         "productLineId": "win60",
@@ -194,10 +1808,12 @@
         "buy": 307,
         "expectedSell": 304,
         "arrived": "2026-05-21",
-        "note": "",
-        "status": "in_stock",
+        "note": "Cod, Cọc 70k",
+        "status": "sold",
         "id": "manual_1779305188880_0",
-        "transactionCode": "NG-20260521-0003"
+        "transactionCode": "NG-20260521-0003",
+        "sell": 350,
+        "sold": "2026-05-31"
       },
       {
         "productLineId": "hi75c-pro",
@@ -298,10 +1914,12 @@
         "buy": 100,
         "expectedSell": 100,
         "arrived": "2026-05-19",
-        "note": "",
-        "status": "in_stock",
+        "note": "Cod",
+        "status": "sold",
         "id": "manual_1779127416977_0",
-        "transactionCode": "NG-20260519-0020"
+        "transactionCode": "NG-20260519-0020",
+        "sell": 160,
+        "sold": "2026-05-28"
       },
       {
         "productLineId": "keycap-moa",
@@ -404,7 +2022,7 @@
         "buy": 702,
         "expectedSell": 702,
         "arrived": "2026-05-19",
-        "note": "",
+        "note": "Đã Hoàn",
         "status": "in_stock",
         "id": "manual_1779125285273_2",
         "transactionCode": "NG-20260519-0015"
@@ -419,9 +2037,11 @@
         "expectedSell": 702,
         "arrived": "2026-05-19",
         "note": "",
-        "status": "in_stock",
+        "status": "sold",
         "id": "manual_1779125285273_3",
-        "transactionCode": "NG-20260519-0016"
+        "transactionCode": "NG-20260519-0016",
+        "sell": 720,
+        "sold": "2026-05-22"
       },
       {
         "productLineId": "hi75c-pro",
@@ -433,9 +2053,11 @@
         "expectedSell": 697,
         "arrived": "2026-05-19",
         "note": "",
-        "status": "in_stock",
+        "status": "sold",
         "id": "manual_1779125246321_0",
-        "transactionCode": "NG-20260519-0012"
+        "transactionCode": "NG-20260519-0012",
+        "sell": 720,
+        "sold": "2026-05-22"
       },
       {
         "productLineId": "hi75c-pro",
@@ -705,11 +2327,13 @@
         "expectedSell": 100,
         "arrived": "2026-04-15",
         "note": "Tháng 4",
-        "status": "in_stock",
+        "status": "sold",
         "id": "imp_1778992642059_6",
         "transactionCode": "NG-20260415-0007",
         "productLineId": "keycap-xda",
-        "variantId": "keycap-xda-matcha"
+        "variantId": "keycap-xda-matcha",
+        "sell": 130,
+        "sold": "2026-06-02"
       },
       {
         "name": "Keycap XDA",
@@ -891,11 +2515,13 @@
         "expectedSell": 60,
         "arrived": "2026-04-15",
         "note": "Tháng 4",
-        "status": "in_stock",
+        "status": "sold",
         "id": "imp_1778992642059_19",
         "transactionCode": "NG-20260415-0020",
         "productLineId": "keycap-polar",
-        "variantId": "keycap-polar-polar-hong"
+        "variantId": "keycap-polar-polar-hong",
+        "sell": 130,
+        "sold": "2026-05-25"
       },
       {
         "name": "Nova 75 Pro Fr4",
@@ -1166,10 +2792,12 @@
         "buy": 501,
         "expectedSell": 501,
         "arrived": "2026-05-04",
-        "note": "",
-        "status": "in_stock",
+        "note": "Ship Xanh",
+        "status": "sold",
         "id": "imp_1778992642059_39",
-        "transactionCode": "NG-20260504-0002"
+        "transactionCode": "NG-20260504-0002",
+        "sell": 527,
+        "sold": "2026-05-23"
       },
       {
         "name": "Xingmeng X98U Silent",
@@ -1209,9 +2837,11 @@
         "expectedSell": 574,
         "arrived": "2026-05-01",
         "note": "",
-        "status": "in_stock",
+        "status": "sold",
         "id": "imp_1778992642059_42",
-        "transactionCode": "NG-20260501-0007"
+        "transactionCode": "NG-20260501-0007",
+        "sell": 650,
+        "sold": "2026-05-24"
       },
       {
         "name": "F75",
@@ -1242,9 +2872,9 @@
         "transactionCode": "NG-20260503-0013"
       },
       {
-        "name": "F75 Trắng Xanh",
+        "name": "F75",
         "cat": "keyboard",
-        "variant": "",
+        "variant": "F75 Xanh Trắng",
         "buy": 648,
         "expectedSell": 650,
         "arrived": "2026-05-03",
@@ -1253,7 +2883,9 @@
         "sell": 650,
         "sold": "2026-05-11",
         "id": "imp_1778992642059_45",
-        "transactionCode": "NG-20260503-0014"
+        "transactionCode": "NG-20260503-0014",
+        "productLineId": "line-f75",
+        "variantId": "line-f75-f75-xanh-trang"
       },
       {
         "name": "F75",
@@ -1537,9 +3169,11 @@
         "expectedSell": 80,
         "arrived": "2026-05-09",
         "note": "",
-        "status": "in_stock",
+        "status": "sold",
         "id": "imp_1778992642059_66",
-        "transactionCode": "NG-20260509-0004"
+        "transactionCode": "NG-20260509-0004",
+        "sell": 130,
+        "sold": "2026-06-02"
       },
       {
         "name": "Win60",
@@ -1549,11 +3183,13 @@
         "expectedSell": 252,
         "arrived": "2026-05-09",
         "note": "",
-        "status": "in_stock",
+        "status": "sold",
         "id": "imp_1778992642059_67",
         "transactionCode": "NG-20260509-0005",
         "productLineId": "win60",
-        "variantId": "win60-en-co-ban"
+        "variantId": "win60-en-co-ban",
+        "sell": 300,
+        "sold": "2026-05-28"
       },
       {
         "name": "Win68",
@@ -1572,14 +3208,16 @@
       {
         "name": "Keycap Trong Suốt X5",
         "cat": "keycap",
-        "variant": "",
-        "buy": 600,
-        "expectedSell": 600,
+        "variant": "Mặc định",
+        "buy": 360,
+        "expectedSell": 360,
         "arrived": "2026-05-01",
         "note": "",
         "status": "in_stock",
         "id": "imp_1778992642059_69",
-        "transactionCode": "NG-20260501-0008"
+        "transactionCode": "NG-20260501-0008",
+        "productLineId": "line-keycap-trong-suot-x5",
+        "variantId": "variant-keycap-trong-suot-x5-mac-inh"
       },
       {
         "name": "Màn 14in",
@@ -1602,12 +3240,14 @@
         "buy": 286,
         "expectedSell": 286,
         "arrived": "2026-05-10",
-        "note": "",
-        "status": "in_stock",
+        "note": "Đang Ship Cod HCM",
+        "status": "sold",
         "id": "imp_1778992642059_71",
         "transactionCode": "NG-20260510-0002",
         "productLineId": "line-win68",
-        "variantId": "line-win68-trang"
+        "variantId": "line-win68-trang",
+        "sell": 430,
+        "sold": "2026-05-28"
       },
       {
         "name": "Nova 75 Base",
@@ -1673,11 +3313,13 @@
         "expectedSell": 381,
         "arrived": "2026-05-10",
         "note": "",
-        "status": "in_stock",
+        "status": "sold",
         "id": "imp_1778992642059_76",
         "transactionCode": "NG-20260510-0007",
         "productLineId": "win60",
-        "variantId": "win60-max"
+        "variantId": "win60-max",
+        "sell": 430,
+        "sold": "2026-05-25"
       },
       {
         "name": "Nova75",
@@ -1686,12 +3328,14 @@
         "buy": 689,
         "expectedSell": 689,
         "arrived": "2026-05-12",
-        "note": "",
-        "status": "in_stock",
+        "note": "Cod",
+        "status": "sold",
         "id": "imp_1778992642059_77",
         "transactionCode": "NG-20260512-0001",
         "productLineId": "nova75",
-        "variantId": "nova75-base"
+        "variantId": "nova75-base",
+        "sell": 720,
+        "sold": "2026-05-26"
       },
       {
         "name": "Nova 75 Max Hồng",
@@ -1839,11 +3483,13 @@
         "expectedSell": 595,
         "arrived": "2026-05-15",
         "note": "",
-        "status": "in_stock",
+        "status": "sold",
         "id": "imp_1778992642059_88",
         "transactionCode": "NG-20260515-0004",
         "productLineId": "line-s75-pro-en-hong",
-        "variantId": "line-s75-pro-en-hong-en-hong"
+        "variantId": "line-s75-pro-en-hong-en-hong",
+        "sell": 630,
+        "sold": "2026-05-22"
       },
       {
         "name": "Màn14in Cảm Ứng",
@@ -1973,6 +3619,10 @@
           {
             "id": "line-f75-f75-xanh-may",
             "name": "F75 Xanh Mây"
+          },
+          {
+            "id": "line-f75-max",
+            "name": "Max"
           }
         ]
       },
@@ -2009,6 +3659,18 @@
           {
             "id": "hi75c-pro-pudding-hong",
             "name": "Pudding Hồng"
+          },
+          {
+            "id": "hi75c-pro-kit-xanh-la",
+            "name": "Kit Xanh La"
+          },
+          {
+            "id": "hi75c-pro-en-luong-tu",
+            "name": "Đen Lượng Tử"
+          },
+          {
+            "id": "hi75c-pro-kit-xanh-duong",
+            "name": "Kit Xanh Dương"
           }
         ]
       },
@@ -2037,6 +3699,10 @@
           {
             "id": "f108-pro-xanh-bang",
             "name": "Xanh Băng"
+          },
+          {
+            "id": "f108-pro-xam-gradient",
+            "name": "Xám Gradient"
           }
         ]
       },
@@ -2089,6 +3755,10 @@
           {
             "id": "keycap-trong-suot-hong",
             "name": "Hồng"
+          },
+          {
+            "id": "keycap-trong-suot-o",
+            "name": "Đỏ"
           }
         ]
       },
@@ -2123,6 +3793,10 @@
           {
             "id": "keycap-pudding-hong",
             "name": "Hồng"
+          },
+          {
+            "id": "keycap-pudding-trang",
+            "name": "Trắng"
           }
         ]
       },
@@ -2147,6 +3821,10 @@
           {
             "id": "win60-max",
             "name": "Max"
+          },
+          {
+            "id": "win60-trang",
+            "name": "Trắng"
           }
         ]
       },
@@ -2181,6 +3859,14 @@
           {
             "id": "line-s75-pro-en-hong-en-hong",
             "name": "Đen Hồng"
+          },
+          {
+            "id": "line-s75-pro-en-hong-trang-xanh",
+            "name": "Trắng Xanh"
+          },
+          {
+            "id": "line-s75-pro-en-hong-hong",
+            "name": "Hồng"
           }
         ],
         "discovered": true
@@ -2231,6 +3917,259 @@
           {
             "id": "nova75-base",
             "name": "Base"
+          },
+          {
+            "id": "nova75-pro",
+            "name": "Pro"
+          }
+        ]
+      },
+      {
+        "id": "chuot-leobog",
+        "cat": "mouse",
+        "brand": "",
+        "name": "Chuột Leobog",
+        "variants": [
+          {
+            "id": "chuot-leobog-mac-dinh",
+            "name": "Mặc định"
+          },
+          {
+            "id": "chuot-leobog-gm2-pro",
+            "name": "Gm2 Pro"
+          },
+          {
+            "id": "chuot-leobog-gm5se",
+            "name": "Gm5se"
+          },
+          {
+            "id": "chuot-leobog-gm5-pro",
+            "name": "Gm5 Pro"
+          }
+        ]
+      },
+      {
+        "id": "man-zsus",
+        "cat": "monitor",
+        "brand": "",
+        "name": "Màn Zsus",
+        "variants": [
+          {
+            "id": "man-zsus-mac-dinh",
+            "name": "Mặc định"
+          },
+          {
+            "id": "man-zsus-14in-2k-cam-ung",
+            "name": "14in 2k Cảm Ứng."
+          },
+          {
+            "id": "man-zsus-16in-2k",
+            "name": "16in 2k"
+          },
+          {
+            "id": "man-zsus-16in-full-hd",
+            "name": "16in Full Hd"
+          },
+          {
+            "id": "man-zsus-14in-2k",
+            "name": "14in 2k"
+          },
+          {
+            "id": "man-zsus-14in-fullhd-cam-ung",
+            "name": "14in Fullhd Cảm Ứng"
+          }
+        ]
+      },
+      {
+        "id": "man-lalipu",
+        "cat": "monitor",
+        "brand": "",
+        "name": "Màn Lalipu",
+        "variants": [
+          {
+            "id": "man-lalipu-mac-dinh",
+            "name": "Mặc định"
+          },
+          {
+            "id": "man-lalipu-14in-fhd-cam-ung",
+            "name": "14in Fhd Cảm Ứng"
+          },
+          {
+            "id": "man-lalipu-14in-2k",
+            "name": "14in 2k"
+          },
+          {
+            "id": "man-lalipu-16in-fullhd-120hz",
+            "name": "16in Fullhd 120hz"
+          },
+          {
+            "id": "man-lalipu-16in-2k",
+            "name": "16in 2k"
+          },
+          {
+            "id": "man-lalipu-15-6-fhd-cam-ung",
+            "name": "15.6 Fhd Cảm Ứng"
+          },
+          {
+            "id": "man-lalipu-14in-fullhd",
+            "name": "14in Fullhd"
+          },
+          {
+            "id": "man-lalipu-14in-fhd-100-srgb",
+            "name": "14in Fhd 100% Srgb"
+          }
+        ]
+      },
+      {
+        "id": "keycap-lo",
+        "cat": "keycap",
+        "brand": "",
+        "name": "Keycap Lỏ",
+        "variants": [
+          {
+            "id": "keycap-lo-mac-dinh",
+            "name": "Mặc định"
+          }
+        ]
+      },
+      {
+        "id": "bao-da-14in",
+        "cat": "keyboard",
+        "brand": "",
+        "name": "Bao Da 14in",
+        "variants": [
+          {
+            "id": "bao-da-14in-mac-dinh",
+            "name": "Mặc định"
+          }
+        ]
+      },
+      {
+        "id": "bao-da-14in-2",
+        "cat": "accessory",
+        "brand": "",
+        "name": "Bao Da 14in",
+        "variants": [
+          {
+            "id": "bao-da-14in-2-mac-dinh",
+            "name": "Mặc định"
+          }
+        ]
+      },
+      {
+        "id": "lot-chuot",
+        "cat": "accessory",
+        "brand": "",
+        "name": "Lót Chuột",
+        "variants": [
+          {
+            "id": "lot-chuot-mac-dinh",
+            "name": "Mặc định"
+          },
+          {
+            "id": "lot-chuot-cam",
+            "name": "Cam"
+          }
+        ]
+      },
+      {
+        "id": "line-hero68",
+        "cat": "keyboard",
+        "brand": "",
+        "name": "Hero68",
+        "variants": [
+          {
+            "id": "variant-hero68-mac-inh",
+            "name": "Mặc Định",
+            "discovered": true
+          },
+          {
+            "id": "line-hero68-air",
+            "name": "Air"
+          }
+        ]
+      },
+      {
+        "id": "celtic-98",
+        "cat": "keyboard",
+        "brand": "",
+        "name": "Celtic 98",
+        "variants": [
+          {
+            "id": "celtic-98-mac-dinh",
+            "name": "Mặc định"
+          },
+          {
+            "id": "celtic-98-trang-1-mode",
+            "name": "Trắng 1 Mode"
+          }
+        ]
+      },
+      {
+        "id": "keycap-polar-2",
+        "cat": "accessory",
+        "brand": "",
+        "name": "Keycap Polar",
+        "variants": [
+          {
+            "id": "keycap-polar-2-mac-dinh",
+            "name": "Mặc định"
+          },
+          {
+            "id": "keycap-polar-2-xam",
+            "name": "Xám"
+          }
+        ]
+      },
+      {
+        "id": "switch",
+        "cat": "accessory",
+        "brand": "",
+        "name": "Switch",
+        "variants": [
+          {
+            "id": "switch-mac-dinh",
+            "name": "Mặc định"
+          },
+          {
+            "id": "switch-sw-leobog",
+            "name": "Sw Leobog"
+          },
+          {
+            "id": "switch-leobog",
+            "name": "Leobog"
+          }
+        ]
+      },
+      {
+        "id": "xinmeng-zero68",
+        "cat": "keyboard",
+        "brand": "",
+        "name": "Xinmeng Zero68",
+        "variants": [
+          {
+            "id": "xinmeng-zero68-mac-dinh",
+            "name": "Mặc định"
+          },
+          {
+            "id": "xinmeng-zero68-en",
+            "name": "Đen"
+          }
+        ]
+      },
+      {
+        "id": "kecap-carbon",
+        "cat": "keycap",
+        "brand": "",
+        "name": "Kecap Carbon",
+        "variants": [
+          {
+            "id": "kecap-carbon-mac-dinh",
+            "name": "Mặc định"
+          },
+          {
+            "id": "kecap-carbon-trang",
+            "name": "Trăng"
           }
         ]
       }
@@ -2295,8 +4234,9 @@
         "note": ""
       }
     ],
+    "extraExpenses": [],
     "dashboardSettings": {
-      "includePendingAffiliateInProfit": false
+      "includePendingAffiliateInProfit": true
     },
     "snapshots": []
   }

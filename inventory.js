@@ -1,5 +1,13 @@
 (() => {
   const { useState: useStateI, useMemo: useMemoI } = React;
+  function formatLocalDateInput(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  }
+  function defaultArrivalDate(now = /* @__PURE__ */ new Date()) {
+    const date = new Date(now);
+    if (date.getHours() < 6) date.setDate(date.getDate() - 1);
+    return formatLocalDateInput(date);
+  }
   function Inventory({
     units,
     inStock,
@@ -19,17 +27,26 @@
     const [search, setSearch] = useStateI("");
     const [cat, setCat] = useStateI("all");
     const [sort, setSort] = useStateI("arrived_desc");
+    const [arrivalFrom, setArrivalFrom] = useStateI("");
+    const [arrivalTo, setArrivalTo] = useStateI("");
     const [showAdd, setShowAdd] = useStateI(false);
     const [sellingUnit, setSellingUnit] = useStateI(null);
+    const [bulkSellingUnits, setBulkSellingUnits] = useStateI(null);
     const [editingUnit, setEditingUnit] = useStateI(null);
     const [selectedStructureCategoryId, setSelectedStructureCategoryId] = useStateI(null);
     const [lastAddedSelection, setLastAddedSelection] = useStateI(null);
+    const [selectedUnitIds, setSelectedUnitIds] = useStateI([]);
+    const activeStock = useMemoI(() => inStock.filter((unit) => unit.status === "in_stock"), [inStock]);
+    const returnedCount = inStock.filter((unit) => unit.status === "returned").length;
     const filtered = useMemoI(() => {
       let r = inStock.filter((p) => {
         const s = search.toLowerCase();
         const matchSearch = !s || p.name.toLowerCase().includes(s) || (p.variant || "").toLowerCase().includes(s) || (p.transactionCode || "").toLowerCase().includes(s);
         const matchCat = cat === "all" || p.cat === cat;
-        return matchSearch && matchCat;
+        const arrived = p.arrived || "";
+        const matchDateFrom = !arrivalFrom || arrived >= arrivalFrom;
+        const matchDateTo = !arrivalTo || arrived <= arrivalTo;
+        return matchSearch && matchCat && matchDateFrom && matchDateTo;
       });
       r = r.slice().sort((a, b) => {
         if (sort === "name") return a.name.localeCompare(b.name);
@@ -41,18 +58,50 @@
         return 0;
       });
       return r;
-    }, [inStock, search, cat, sort]);
-    const totalUnits = inStock.length;
-    const totalValue = inStock.reduce((s, p) => s + p.buy, 0);
-    const totalSellValue = inStock.reduce((s, p) => s + (p.expectedSell || p.buy), 0);
+    }, [inStock, search, cat, sort, arrivalFrom, arrivalTo]);
+    const selectedUnits = useMemoI(() => {
+      const selected = new Set(selectedUnitIds);
+      return activeStock.filter((unit) => selected.has(unit.id));
+    }, [activeStock, selectedUnitIds]);
+    const filteredActive = filtered.filter((unit) => unit.status === "in_stock");
+    const filteredIds = filteredActive.map((unit) => unit.id);
+    const allFilteredSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedUnitIds.includes(id));
+    const someFilteredSelected = filteredIds.some((id) => selectedUnitIds.includes(id));
+    const toggleUnitSelection = (id) => {
+      if (!activeStock.some((unit) => unit.id === id)) return;
+      setSelectedUnitIds((prev) => prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]);
+    };
+    const toggleFilteredSelection = () => {
+      setSelectedUnitIds((prev) => {
+        const filteredSet = new Set(filteredIds);
+        if (filteredIds.length > 0 && filteredIds.every((id) => prev.includes(id))) {
+          return prev.filter((id) => !filteredSet.has(id));
+        }
+        return [.../* @__PURE__ */ new Set([...prev, ...filteredIds])];
+      });
+    };
+    const markReturned = (unit) => {
+      if (confirm(`\u0110\xE1nh d\u1EA5u "${unit.name}${unit.variant ? " \xB7 " + unit.variant : ""}" l\xE0 h\xE0ng ho\xE0n? M\xF3n n\xE0y s\u1EBD kh\xF4ng t\xEDnh v\xE0o th\u1ED1ng k\xEA ti\u1EC1n.`)) {
+        updateUnit(unit.id, { status: "returned" }, "\u0110\xE1nh d\u1EA5u h\xE0ng ho\xE0n");
+        setSelectedUnitIds((prev) => prev.filter((id) => id !== unit.id));
+      }
+    };
+    const restoreReturned = (unit) => {
+      if (confirm(`H\u1EE7y ho\xE0n "${unit.name}${unit.variant ? " \xB7 " + unit.variant : ""}" v\xE0 \u0111\u01B0a m\xF3n n\xE0y v\u1EC1 t\u1ED3n kho?`)) {
+        updateUnit(unit.id, { status: "in_stock" }, "H\u1EE7y ho\xE0n h\xE0ng");
+      }
+    };
+    const totalUnits = activeStock.length;
+    const totalValue = activeStock.reduce((s, p) => s + p.buy, 0);
+    const totalSellValue = activeStock.reduce((s, p) => s + (p.expectedSell || p.buy), 0);
     const expectedProfit = totalSellValue - totalValue;
     const catCounts = useMemoI(() => {
-      const m = { all: inStock.length };
-      inStock.forEach((p) => {
+      const m = { all: activeStock.length };
+      activeStock.forEach((p) => {
         m[p.cat] = (m[p.cat] || 0) + 1;
       });
       return m;
-    }, [inStock]);
+    }, [activeStock]);
     const usedCategoryIds = useMemoI(() => new Set(units.map((unit) => unit.cat)), [units]);
     const visibleCategories = useMemoI(
       () => window.CATEGORIES.filter((category) => usedCategoryIds.has(category.id)),
@@ -60,7 +109,7 @@
     );
     const categoryStructure = useMemoI(() => {
       return window.CATEGORIES.map((category) => {
-        const rows = inStock.filter((unit) => unit.cat === category.id);
+        const rows = activeStock.filter((unit) => unit.cat === category.id);
         const units2 = rows.length;
         const capital = rows.reduce((sum, unit) => sum + (+unit.buy || 0), 0);
         const expectedSell = rows.reduce((sum, unit) => sum + (+(unit.expectedSell || unit.buy) || 0), 0);
@@ -73,7 +122,7 @@
           unitShare: totalUnits > 0 ? units2 / totalUnits * 100 : 0
         };
       }).filter((item) => item.units > 0 || item.capital > 0);
-    }, [inStock, totalUnits, totalValue]);
+    }, [activeStock, totalUnits, totalValue]);
     const quantityDonutData = categoryStructure.map((item) => ({
       categoryId: item.id,
       label: item.name,
@@ -90,7 +139,7 @@
     const selectedCategoryLines = useMemoI(() => {
       if (!selectedStructureCategoryId) return [];
       const grouped = /* @__PURE__ */ new Map();
-      inStock.filter((unit) => unit.cat === selectedStructureCategoryId).forEach((unit) => {
+      activeStock.filter((unit) => unit.cat === selectedStructureCategoryId).forEach((unit) => {
         const line = window.findCatalogLine(catalogLines, unit);
         const key = line?.id || `${unit.cat}__${unit.name}`;
         const current = grouped.get(key) || {
@@ -110,15 +159,52 @@
         expectedProfit: line.expectedSell - line.capital,
         capitalShare: selectedStructureCategory?.capital > 0 ? line.capital / selectedStructureCategory.capital * 100 : 0
       })).sort((a, b) => b.capital - a.capital || b.quantity - a.quantity || a.name.localeCompare(b.name));
-    }, [selectedStructureCategoryId, selectedStructureCategory, inStock, catalogLines]);
+    }, [selectedStructureCategoryId, selectedStructureCategory, activeStock, catalogLines]);
     const daysInStock = (arrived) => {
       const d1 = new Date(today), d2 = new Date(arrived);
       return Math.floor((d1 - d2) / (1e3 * 60 * 60 * 24));
     };
-    return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "page-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h1", { className: "page-title" }, /* @__PURE__ */ React.createElement("span", { className: "accent" }), "Qu\u1EA3n l\xFD kho h\xE0ng"), /* @__PURE__ */ React.createElement("div", { className: "page-sub" }, totalUnits, " \u0111\u01A1n v\u1ECB trong kho \xB7 m\u1ED7i d\xF2ng = 1 m\xF3n ri\xEAng bi\u1EC7t")), /* @__PURE__ */ React.createElement("div", { className: "page-controls" }, /* @__PURE__ */ React.createElement("div", { className: "search" }, /* @__PURE__ */ React.createElement("span", { className: "search-icon" }, /* @__PURE__ */ React.createElement("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" }, /* @__PURE__ */ React.createElement("circle", { cx: "11", cy: "11", r: "8" }), /* @__PURE__ */ React.createElement("path", { d: "m21 21-4.3-4.3" }))), /* @__PURE__ */ React.createElement("input", { type: "text", placeholder: "T\xECm theo m\xE3 / t\xEAn / variant...", value: search, onChange: (e) => setSearch(e.target.value) })), /* @__PURE__ */ React.createElement("select", { className: "ctl", value: sort, onChange: (e) => setSort(e.target.value) }, /* @__PURE__ */ React.createElement("option", { value: "arrived_desc" }, "M\u1EDAI V\u1EC0 TR\u01AF\u1EDAC"), /* @__PURE__ */ React.createElement("option", { value: "arrived_asc" }, "C\u0168 V\u1EC0 TR\u01AF\u1EDAC"), /* @__PURE__ */ React.createElement("option", { value: "name" }, "T\xCAN A-Z"), /* @__PURE__ */ React.createElement("option", { value: "price_asc" }, "GI\xC1 B\xC1N T\u0102NG"), /* @__PURE__ */ React.createElement("option", { value: "price_desc" }, "GI\xC1 B\xC1N GI\u1EA2M"), /* @__PURE__ */ React.createElement("option", { value: "buy_desc" }, "V\u1ED0N CAO NH\u1EA4T")), /* @__PURE__ */ React.createElement(ImportDataButton, { today, onImport: importUnits, disabled: readOnly }), /* @__PURE__ */ React.createElement(ExportDataButton, { units, today }), /* @__PURE__ */ React.createElement("button", { className: "ctl primary", onClick: () => setShowAdd(true), disabled: readOnly }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 16, lineHeight: 1 } }, "+"), " NH\u1EACP H\xC0NG M\u1EDAI"))), /* @__PURE__ */ React.createElement("div", { className: "inv-sum" }, /* @__PURE__ */ React.createElement("div", { className: "kpi" }, /* @__PURE__ */ React.createElement("div", { className: "kpi-label" }, "T\u1ED5ng \u0111\u01A1n v\u1ECB t\u1ED3n"), /* @__PURE__ */ React.createElement("div", { className: "kpi-value mono" }, totalUnits, /* @__PURE__ */ React.createElement("span", { className: "unit" }, "m\xF3n"))), /* @__PURE__ */ React.createElement("div", { className: "kpi blue" }, /* @__PURE__ */ React.createElement("div", { className: "kpi-label" }, "Gi\xE1 tr\u1ECB kho (v\u1ED1n)"), /* @__PURE__ */ React.createElement("div", { className: "kpi-value mono", style: { color: "#2563eb" } }, window.fmtK(totalValue), /* @__PURE__ */ React.createElement("span", { className: "unit" }, "\u0111"))), /* @__PURE__ */ React.createElement("div", { className: "kpi purple" }, /* @__PURE__ */ React.createElement("div", { className: "kpi-label" }, "Gi\xE1 b\xE1n d\u1EF1 ki\u1EBFn"), /* @__PURE__ */ React.createElement("div", { className: "kpi-value mono", style: { color: "#7c3aed" } }, window.fmtK(totalSellValue), /* @__PURE__ */ React.createElement("span", { className: "unit" }, "\u0111"))), /* @__PURE__ */ React.createElement("div", { className: "kpi green" }, /* @__PURE__ */ React.createElement("div", { className: "kpi-label" }, "L\u1EE3i nhu\u1EADn d\u1EF1 ki\u1EBFn"), /* @__PURE__ */ React.createElement("div", { className: "kpi-value mono", style: { color: "#10b981" } }, "+", window.fmtK(expectedProfit), /* @__PURE__ */ React.createElement("span", { className: "unit" }, "\u0111")), /* @__PURE__ */ React.createElement("div", { className: "kpi-delta" }, /* @__PURE__ */ React.createElement("span", { className: "up" }, "\u25B2 ", totalValue > 0 ? (expectedProfit / totalValue * 100).toFixed(1) : 0, "%"), /* @__PURE__ */ React.createElement("span", null, "bi\xEAn d\u1EF1 ki\u1EBFn")))), /* @__PURE__ */ React.createElement("div", { className: "chips" }, /* @__PURE__ */ React.createElement("button", { className: `chip ${cat === "all" ? "active" : ""}`, onClick: () => setCat("all") }, "T\u1EA4T C\u1EA2 ", /* @__PURE__ */ React.createElement("span", { className: "chip-count" }, catCounts.all || 0)), visibleCategories.map((c) => /* @__PURE__ */ React.createElement("button", { key: c.id, className: `chip ${cat === c.id ? "active" : ""}`, onClick: () => setCat(c.id) }, /* @__PURE__ */ React.createElement("i", { style: { width: 7, height: 7, background: c.color, display: "inline-block" } }), c.name.toUpperCase(), " ", /* @__PURE__ */ React.createElement("span", { className: "chip-count" }, catCounts[c.id] || 0)))), /* @__PURE__ */ React.createElement("div", { className: "charts-row inventory-layout" }, /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "card-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "card-title" }, "T\u1ED3n kho chi ti\u1EBFt"), /* @__PURE__ */ React.createElement("div", { className: "card-sub" }, filtered.length, " m\xF3n \xB7 b\u1EA5m B\xC1N \u0111\u1EC3 chuy\u1EC3n sang s\u1ED5 doanh thu"))), /* @__PURE__ */ React.createElement("div", { className: "tbl-wrap" }, /* @__PURE__ */ React.createElement("table", { className: "tbl" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "M\xE3 GD"), /* @__PURE__ */ React.createElement("th", null, "S\u1EA3n ph\u1EA9m"), /* @__PURE__ */ React.createElement("th", null, "Danh m\u1EE5c"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "Gi\xE1 mua"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "Gi\xE1 b\xE1n DK"), /* @__PURE__ */ React.createElement("th", null, "Ng\xE0y v\u1EC1"), /* @__PURE__ */ React.createElement("th", null, "T\u1ED3n"), /* @__PURE__ */ React.createElement("th", null, "Ghi ch\xFA"), /* @__PURE__ */ React.createElement("th", null))), /* @__PURE__ */ React.createElement("tbody", null, filtered.map((p) => {
+    return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "page-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h1", { className: "page-title" }, /* @__PURE__ */ React.createElement("span", { className: "accent" }), "Qu\u1EA3n l\xFD kho h\xE0ng"), /* @__PURE__ */ React.createElement("div", { className: "page-sub" }, totalUnits, " \u0111\u01A1n v\u1ECB \u0111ang t\xEDnh kho", returnedCount > 0 ? ` \xB7 ${returnedCount} h\xE0ng ho\xE0n kh\xF4ng t\xEDnh ti\u1EC1n` : "", " \xB7 m\u1ED7i d\xF2ng = 1 m\xF3n ri\xEAng bi\u1EC7t")), /* @__PURE__ */ React.createElement("div", { className: "page-controls" }, /* @__PURE__ */ React.createElement("div", { className: "search" }, /* @__PURE__ */ React.createElement("span", { className: "search-icon" }, /* @__PURE__ */ React.createElement("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" }, /* @__PURE__ */ React.createElement("circle", { cx: "11", cy: "11", r: "8" }), /* @__PURE__ */ React.createElement("path", { d: "m21 21-4.3-4.3" }))), /* @__PURE__ */ React.createElement("input", { type: "text", placeholder: "T\xECm theo m\xE3 / t\xEAn / variant...", value: search, onChange: (e) => setSearch(e.target.value) })), /* @__PURE__ */ React.createElement("div", { className: "date-range-filter" }, /* @__PURE__ */ React.createElement("label", null, /* @__PURE__ */ React.createElement("span", null, "T\u1EEB ng\xE0y"), /* @__PURE__ */ React.createElement("input", { type: "date", value: arrivalFrom, onChange: (e) => setArrivalFrom(e.target.value) })), /* @__PURE__ */ React.createElement("label", null, /* @__PURE__ */ React.createElement("span", null, "\u0110\u1EBFn ng\xE0y"), /* @__PURE__ */ React.createElement("input", { type: "date", value: arrivalTo, onChange: (e) => setArrivalTo(e.target.value) })), (arrivalFrom || arrivalTo) && /* @__PURE__ */ React.createElement("button", { className: "ctl ghost sm", type: "button", onClick: () => { setArrivalFrom(""); setArrivalTo(""); } }, "X\xD3A NG\xC0Y")), /* @__PURE__ */ React.createElement("select", { className: "ctl", value: sort, onChange: (e) => setSort(e.target.value) }, /* @__PURE__ */ React.createElement("option", { value: "arrived_desc" }, "M\u1EDAI V\u1EC0 TR\u01AF\u1EDAC"), /* @__PURE__ */ React.createElement("option", { value: "arrived_asc" }, "C\u0168 V\u1EC0 TR\u01AF\u1EDAC"), /* @__PURE__ */ React.createElement("option", { value: "name" }, "T\xCAN A-Z"), /* @__PURE__ */ React.createElement("option", { value: "price_asc" }, "GI\xC1 B\xC1N T\u0102NG"), /* @__PURE__ */ React.createElement("option", { value: "price_desc" }, "GI\xC1 B\xC1N GI\u1EA2M"), /* @__PURE__ */ React.createElement("option", { value: "buy_desc" }, "V\u1ED0N CAO NH\u1EA4T")), /* @__PURE__ */ React.createElement(ImportDataButton, { today, onImport: importUnits, disabled: readOnly }), /* @__PURE__ */ React.createElement(ExportDataButton, { units, today }), /* @__PURE__ */ React.createElement("button", { className: "ctl primary", onClick: () => setShowAdd(true), disabled: readOnly }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 16, lineHeight: 1 } }, "+"), " NH\u1EACP H\xC0NG M\u1EDAI"))), /* @__PURE__ */ React.createElement("div", { className: "inv-sum" }, /* @__PURE__ */ React.createElement("div", { className: "kpi" }, /* @__PURE__ */ React.createElement("div", { className: "kpi-label" }, "T\u1ED5ng \u0111\u01A1n v\u1ECB t\u1ED3n"), /* @__PURE__ */ React.createElement("div", { className: "kpi-value mono" }, totalUnits, /* @__PURE__ */ React.createElement("span", { className: "unit" }, "m\xF3n"))), /* @__PURE__ */ React.createElement("div", { className: "kpi blue" }, /* @__PURE__ */ React.createElement("div", { className: "kpi-label" }, "Gi\xE1 tr\u1ECB kho (v\u1ED1n)"), /* @__PURE__ */ React.createElement("div", { className: "kpi-value mono", style: { color: "#2563eb" } }, window.fmtK(totalValue), /* @__PURE__ */ React.createElement("span", { className: "unit" }, "\u0111"))), /* @__PURE__ */ React.createElement("div", { className: "kpi purple" }, /* @__PURE__ */ React.createElement("div", { className: "kpi-label" }, "Gi\xE1 b\xE1n d\u1EF1 ki\u1EBFn"), /* @__PURE__ */ React.createElement("div", { className: "kpi-value mono", style: { color: "#7c3aed" } }, window.fmtK(totalSellValue), /* @__PURE__ */ React.createElement("span", { className: "unit" }, "\u0111"))), /* @__PURE__ */ React.createElement("div", { className: "kpi green" }, /* @__PURE__ */ React.createElement("div", { className: "kpi-label" }, "L\u1EE3i nhu\u1EADn d\u1EF1 ki\u1EBFn"), /* @__PURE__ */ React.createElement("div", { className: "kpi-value mono", style: { color: "#10b981" } }, "+", window.fmtK(expectedProfit), /* @__PURE__ */ React.createElement("span", { className: "unit" }, "\u0111")), /* @__PURE__ */ React.createElement("div", { className: "kpi-delta" }, /* @__PURE__ */ React.createElement("span", { className: "up" }, "\u25B2 ", totalValue > 0 ? (expectedProfit / totalValue * 100).toFixed(1) : 0, "%"), /* @__PURE__ */ React.createElement("span", null, "bi\xEAn d\u1EF1 ki\u1EBFn")))), /* @__PURE__ */ React.createElement("div", { className: "chips" }, /* @__PURE__ */ React.createElement("button", { className: `chip ${cat === "all" ? "active" : ""}`, onClick: () => setCat("all") }, "T\u1EA4T C\u1EA2 ", /* @__PURE__ */ React.createElement("span", { className: "chip-count" }, catCounts.all || 0)), visibleCategories.map((c) => /* @__PURE__ */ React.createElement("button", { key: c.id, className: `chip ${cat === c.id ? "active" : ""}`, onClick: () => setCat(c.id) }, /* @__PURE__ */ React.createElement("i", { style: { width: 7, height: 7, background: c.color, display: "inline-block" } }), c.name.toUpperCase(), " ", /* @__PURE__ */ React.createElement("span", { className: "chip-count" }, catCounts[c.id] || 0)))), /* @__PURE__ */ React.createElement("div", { className: "charts-row inventory-layout" }, /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "card-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "card-title" }, "T\u1ED3n kho chi ti\u1EBFt"), /* @__PURE__ */ React.createElement("div", { className: "card-sub" }, filtered.length, " m\xF3n \xB7 h\xE0ng ho\xE0n v\u1EABn l\u01B0u l\u1ECBch s\u1EED nh\u01B0ng kh\xF4ng t\xEDnh v\xE0o ti\u1EC1n kho/doanh thu")), /* @__PURE__ */ React.createElement("div", { className: "bulk-actions" }, /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        className: "ctl ghost sm",
+        onClick: toggleFilteredSelection,
+        disabled: readOnly || filteredActive.length === 0
+      },
+      allFilteredSelected ? "B\u1ECF ch\u1ECDn \u0111ang l\u1ECDc" : someFilteredSelected ? "Ch\u1ECDn th\xEAm \u0111ang l\u1ECDc" : "Ch\u1ECDn t\u1EA5t c\u1EA3"
+    ), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        className: "ctl primary sm",
+        onClick: () => setBulkSellingUnits(selectedUnits),
+        disabled: readOnly || selectedUnits.length === 0
+      },
+      "B\xC1N ",
+      selectedUnits.length > 0 ? `${selectedUnits.length} M\xD3N` : "\u0110\xC3 CH\u1ECCN"
+    ))), /* @__PURE__ */ React.createElement("div", { className: "tbl-wrap" }, /* @__PURE__ */ React.createElement("table", { className: "tbl inventory-mobile-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { className: "select-col" }, /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "checkbox",
+        checked: allFilteredSelected,
+        disabled: readOnly || filteredActive.length === 0,
+        onChange: toggleFilteredSelection,
+        title: "Ch\u1ECDn t\u1EA5t c\u1EA3 d\xF2ng \u0111ang l\u1ECDc"
+      }
+    )), /* @__PURE__ */ React.createElement("th", null, "M\xE3 GD"), /* @__PURE__ */ React.createElement("th", null, "S\u1EA3n ph\u1EA9m"), /* @__PURE__ */ React.createElement("th", null, "Danh m\u1EE5c"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "Gi\xE1 mua"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "Gi\xE1 b\xE1n DK"), /* @__PURE__ */ React.createElement("th", null, "Ng\xE0y v\u1EC1"), /* @__PURE__ */ React.createElement("th", null, "T\u1ED3n"), /* @__PURE__ */ React.createElement("th", null, "Ghi ch\xFA"), /* @__PURE__ */ React.createElement("th", null))), /* @__PURE__ */ React.createElement("tbody", null, filtered.map((p) => {
       const days = daysInStock(p.arrived);
       const isAged = days > 14;
-      return /* @__PURE__ */ React.createElement("tr", { key: p.id }, /* @__PURE__ */ React.createElement("td", { className: "mono txn-code" }, p.transactionCode), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { className: "product-cell" }, /* @__PURE__ */ React.createElement(ProductThumb, { cat: p.cat, size: 38 }), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "name" }, p.name), p.variant && /* @__PURE__ */ React.createElement("span", { className: "variant" }, p.variant)))), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(CatPill, { cat: p.cat })), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, p.buy.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "num mono", style: { fontWeight: 700, color: "#7c3aed" } }, (p.expectedSell || 0).toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { fontSize: 12, color: "#6b6b80" } }, new Date(p.arrived).toLocaleDateString("vi-VN")), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("span", { className: `status-tag ${isAged ? "status-low" : "status-ok"}` }, /* @__PURE__ */ React.createElement("span", { className: "d" }), days, "N")), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(
+      const isReturned = p.status === "returned";
+      const selected = selectedUnitIds.includes(p.id);
+      return /* @__PURE__ */ React.createElement("tr", { key: p.id, className: `${selected ? "selected-row" : ""} ${isReturned ? "returned-row" : ""}` }, /* @__PURE__ */ React.createElement("td", { className: "select-col" }, /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          type: "checkbox",
+          checked: selected,
+          disabled: readOnly || isReturned,
+          onChange: () => toggleUnitSelection(p.id),
+          title: "Ch\u1ECDn \u0111\u1EC3 b\xE1n theo l\xF4"
+        }
+      )), /* @__PURE__ */ React.createElement("td", { className: "mono txn-code" }, p.transactionCode), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { className: "product-cell" }, /* @__PURE__ */ React.createElement(ProductThumb, { cat: p.cat, size: 38 }), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "name" }, p.name), p.variant && /* @__PURE__ */ React.createElement("span", { className: "variant" }, p.variant)))), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(CatPill, { cat: p.cat })), /* @__PURE__ */ React.createElement("td", { className: `num mono ${isReturned ? "returned-money" : ""}` }, p.buy.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: `num mono ${isReturned ? "returned-money" : ""}`, style: { fontWeight: 700, color: isReturned ? void 0 : "#7c3aed" } }, (p.expectedSell || 0).toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { fontSize: 12, color: "#6b6b80" } }, new Date(p.arrived).toLocaleDateString("vi-VN")), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("span", { className: `status-tag ${isReturned ? "status-returned" : isAged ? "status-low" : "status-ok"}` }, /* @__PURE__ */ React.createElement("span", { className: "d" }), isReturned ? "H\xC0NG HO\xC0N" : `${days}N`)), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(
         "textarea",
         {
           className: "note-input",
@@ -127,10 +213,10 @@
           onChange: (e) => updateNote(p.id, e.target.value),
           disabled: readOnly
         }
-      )), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { className: "row-actions" }, /* @__PURE__ */ React.createElement("button", { className: "ctl ghost sm", onClick: () => setEditingUnit(p), disabled: readOnly }, "S\u1EECA"), /* @__PURE__ */ React.createElement("button", { className: "ctl primary sm", onClick: () => setSellingUnit(p), disabled: readOnly }, "B\xC1N \u2192"), /* @__PURE__ */ React.createElement("button", { className: "ctl ghost sm", disabled: readOnly, onClick: () => {
+      )), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { className: "row-actions" }, /* @__PURE__ */ React.createElement("button", { className: "ctl ghost sm", onClick: () => setEditingUnit(p), disabled: readOnly }, "S\u1EECA"), isReturned ? /* @__PURE__ */ React.createElement("button", { className: "ctl primary sm", onClick: () => restoreReturned(p), disabled: readOnly }, "H\u1EE6Y HO\xC0N") : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("button", { className: "ctl ghost sm", onClick: () => markReturned(p), disabled: readOnly }, "H\xC0NG HO\xC0N"), /* @__PURE__ */ React.createElement("button", { className: "ctl primary sm", onClick: () => setSellingUnit(p), disabled: readOnly }, "B\xC1N \u2192")), /* @__PURE__ */ React.createElement("button", { className: "ctl ghost sm", disabled: readOnly, onClick: () => {
         if (confirm(`Xo\xE1 "${p.name}${p.variant ? " \xB7 " + p.variant : ""}" kh\u1ECFi kho?`)) removeUnit(p.id);
       }, title: "Xo\xE1 kh\u1ECFi kho" }, "\u{1F5D1}"))));
-    }), filtered.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "9", className: "empty" }, "Kh\xF4ng t\xECm th\u1EA5y s\u1EA3n ph\u1EA9m ph\xF9 h\u1EE3p"))), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "3" }, "T\u1ED4NG (", filtered.length, " m\xF3n)"), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, filtered.reduce((s, p) => s + p.buy, 0).toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "num mono profit-pos" }, filtered.reduce((s, p) => s + (p.expectedSell || 0), 0).toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { colSpan: "4" })))))), /* @__PURE__ */ React.createElement("div", { className: "card stock-composition-card" }, /* @__PURE__ */ React.createElement("div", { className: "card-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "card-title" }, "C\u01A1 c\u1EA5u kho"), /* @__PURE__ */ React.createElement("div", { className: "card-sub" }, "B\u1EA5m v\xE0o danh m\u1EE5c \u0111\u1EC3 xem chi ti\u1EBFt theo d\xF2ng s\u1EA3n ph\u1EA9m"))), /* @__PURE__ */ React.createElement("div", { className: "card-body stock-composition-body" }, /* @__PURE__ */ React.createElement("div", { className: "stock-composition-section" }, /* @__PURE__ */ React.createElement("div", { className: "stock-composition-head" }, /* @__PURE__ */ React.createElement("strong", null, "Theo s\u1ED1 l\u01B0\u1EE3ng"), /* @__PURE__ */ React.createElement("span", null, "M\u1ED7i l\xE1t = % s\u1ED1 m\xF3n")), /* @__PURE__ */ React.createElement("div", { className: "stock-composition-visual" }, /* @__PURE__ */ React.createElement(
+    }), filtered.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "10", className: "empty" }, "Kh\xF4ng t\xECm th\u1EA5y s\u1EA3n ph\u1EA9m ph\xF9 h\u1EE3p"))), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "4" }, "T\u1ED4NG \u0110ANG T\xCDNH (", filteredActive.length, " m\xF3n)"), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, filteredActive.reduce((s, p) => s + p.buy, 0).toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "num mono profit-pos" }, filteredActive.reduce((s, p) => s + (p.expectedSell || 0), 0).toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { colSpan: "4" })))))), /* @__PURE__ */ React.createElement("div", { className: "card stock-composition-card" }, /* @__PURE__ */ React.createElement("div", { className: "card-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "card-title" }, "C\u01A1 c\u1EA5u kho"), /* @__PURE__ */ React.createElement("div", { className: "card-sub" }, "B\u1EA5m v\xE0o danh m\u1EE5c \u0111\u1EC3 xem chi ti\u1EBFt theo d\xF2ng s\u1EA3n ph\u1EA9m"))), /* @__PURE__ */ React.createElement("div", { className: "card-body stock-composition-body" }, /* @__PURE__ */ React.createElement("div", { className: "stock-composition-section" }, /* @__PURE__ */ React.createElement("div", { className: "stock-composition-head" }, /* @__PURE__ */ React.createElement("strong", null, "Theo s\u1ED1 l\u01B0\u1EE3ng"), /* @__PURE__ */ React.createElement("span", null, "M\u1ED7i l\xE1t = % s\u1ED1 m\xF3n")), /* @__PURE__ */ React.createElement("div", { className: "stock-composition-visual" }, /* @__PURE__ */ React.createElement(
       Donut,
       {
         data: quantityDonutData,
@@ -171,7 +257,20 @@
         onClose: () => setSellingUnit(null),
         onConfirm: (sellPrice, soldDate, note) => {
           sellUnit(sellingUnit.id, sellPrice, soldDate, note);
+          setSelectedUnitIds((prev) => prev.filter((id) => id !== sellingUnit.id));
           setSellingUnit(null);
+        }
+      }
+    ), bulkSellingUnits && /* @__PURE__ */ React.createElement(
+      BulkSellModal,
+      {
+        units: bulkSellingUnits,
+        today,
+        onClose: () => setBulkSellingUnits(null),
+        onConfirm: (sales, soldDate, note) => {
+          sales.forEach((sale) => sellUnit(sale.id, sale.sellPrice, soldDate, note));
+          setSelectedUnitIds((prev) => prev.filter((id) => !sales.some((sale) => sale.id === id)));
+          setBulkSellingUnits(null);
         }
       }
     ), editingUnit && /* @__PURE__ */ React.createElement(
@@ -216,12 +315,71 @@
       }
     ) : /* @__PURE__ */ React.createElement("div", { className: "empty" }, "Ch\u01B0a c\xF3 d\u1EEF li\u1EC7u"))), /* @__PURE__ */ React.createElement("div", { className: "card analytics-panel" }, /* @__PURE__ */ React.createElement("div", { className: "card-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "card-title" }, "Chi ti\u1EBFt t\u1EEBng d\xF2ng s\u1EA3n ph\u1EA9m"), /* @__PURE__ */ React.createElement("div", { className: "card-sub" }, "S\u1ED1 l\u01B0\u1EE3ng v\xE0 v\u1ED1n hi\u1EC7n \u0111ang n\u1EB1m trong kho"))), /* @__PURE__ */ React.createElement("div", { className: "tbl-wrap" }, /* @__PURE__ */ React.createElement("table", { className: "tbl analytics-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "D\xF2ng s\u1EA3n ph\u1EA9m"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "SL"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "V\u1ED1n"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "% v\u1ED1n"))), /* @__PURE__ */ React.createElement("tbody", null, lines.map((line) => /* @__PURE__ */ React.createElement("tr", { key: line.id }, /* @__PURE__ */ React.createElement("td", null, line.name), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, line.quantity), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, line.capital.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, line.capitalShare.toFixed(1), "%"))), lines.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "4", className: "empty" }, "Ch\u01B0a c\xF3 d\xF2ng s\u1EA3n ph\u1EA9m n\xE0o"))))))))));
   }
+  function BulkSellModal({ units, today, onClose, onConfirm }) {
+    const [soldDate, setSoldDate] = useStateI(today);
+    const [note, setNote] = useStateI("");
+    const [samePrice, setSamePrice] = useStateI(false);
+    const [commonPrice, setCommonPrice] = useStateI(units[0]?.expectedSell || units[0]?.buy || "");
+    const [prices, setPrices] = useStateI(() => {
+      const initial = {};
+      units.forEach((unit) => {
+        initial[unit.id] = unit.expectedSell || unit.buy || "";
+      });
+      return initial;
+    });
+    const effectivePrices = units.map((unit) => +(samePrice ? commonPrice : prices[unit.id]) || 0);
+    const totalBuy = units.reduce((sum, unit) => sum + (+unit.buy || 0), 0);
+    const totalSell = effectivePrices.reduce((sum, price) => sum + price, 0);
+    const profit = totalSell - totalBuy;
+    const allValid = units.length > 0 && effectivePrices.every((price) => price > 0);
+    const applyCommonPrice = () => {
+      const value = commonPrice || "";
+      setPrices((prev) => {
+        const next = { ...prev };
+        units.forEach((unit) => {
+          next[unit.id] = value;
+        });
+        return next;
+      });
+    };
+    const confirm2 = () => {
+      if (!allValid) return;
+      const sales = units.map((unit) => ({
+        id: unit.id,
+        sellPrice: samePrice ? commonPrice : prices[unit.id]
+      }));
+      onConfirm(sales, soldDate, note);
+    };
+    return /* @__PURE__ */ React.createElement("div", { className: "modal-bg", onClick: onClose }, /* @__PURE__ */ React.createElement("div", { className: "modal bulk-sell-modal", onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { className: "modal-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "modal-title" }, /* @__PURE__ */ React.createElement("span", { className: "accent" }), "GHI NH\u1EACN B\xC1N THEO L\xD4"), /* @__PURE__ */ React.createElement("div", { className: "card-sub" }, units.length, " m\xF3n \u0111ang ch\u1ECDn")), /* @__PURE__ */ React.createElement("button", { className: "close-x", onClick: onClose }, "\xD7")), /* @__PURE__ */ React.createElement("div", { className: "modal-body" }, /* @__PURE__ */ React.createElement("div", { className: "bulk-sell-toolbar" }, /* @__PURE__ */ React.createElement("label", { className: "bulk-sell-check" }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: samePrice, onChange: (e) => setSamePrice(e.target.checked) }), /* @__PURE__ */ React.createElement("span", null, "B\xE1n t\u1EA5t c\u1EA3 c\xF9ng 1 gi\xE1")), /* @__PURE__ */ React.createElement("div", { className: "bulk-sell-common" }, /* @__PURE__ */ React.createElement("label", null, "Gi\xE1 chung (ngh\xECn)"), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "number",
+        value: commonPrice,
+        onChange: (e) => setCommonPrice(e.target.value),
+        disabled: !samePrice
+      }
+    ), /* @__PURE__ */ React.createElement("button", { className: "ctl ghost sm", onClick: applyCommonPrice, disabled: !samePrice }, "\xC1P GI\xC1")), /* @__PURE__ */ React.createElement("div", { className: "bulk-sell-date" }, /* @__PURE__ */ React.createElement("label", null, "Ng\xE0y b\xE1n"), /* @__PURE__ */ React.createElement("input", { type: "date", value: soldDate, onChange: (e) => setSoldDate(e.target.value) }))), /* @__PURE__ */ React.createElement("div", { className: "tbl-wrap bulk-sell-table-wrap" }, /* @__PURE__ */ React.createElement("table", { className: "tbl bulk-sell-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "M\xE3 GD"), /* @__PURE__ */ React.createElement("th", null, "S\u1EA3n ph\u1EA9m"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "Gi\xE1 mua"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "Gi\xE1 b\xE1n"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "L\xE3i"))), /* @__PURE__ */ React.createElement("tbody", null, units.map((unit, index) => {
+      const sellPrice = effectivePrices[index];
+      const rowProfit = sellPrice - (+unit.buy || 0);
+      return /* @__PURE__ */ React.createElement("tr", { key: unit.id }, /* @__PURE__ */ React.createElement("td", { className: "mono txn-code" }, unit.transactionCode), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { className: "name" }, unit.name), unit.variant && /* @__PURE__ */ React.createElement("span", { className: "variant" }, unit.variant)), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, (+unit.buy || 0).toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "num" }, /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          className: "bulk-price-input",
+          type: "number",
+          value: samePrice ? commonPrice : prices[unit.id],
+          disabled: samePrice,
+          onChange: (e) => setPrices((prev) => ({ ...prev, [unit.id]: e.target.value }))
+        }
+      )), /* @__PURE__ */ React.createElement("td", { className: `num mono ${rowProfit >= 0 ? "profit-pos" : "profit-neg"}` }, rowProfit < 0 ? "\u2212" : "+", Math.abs(rowProfit).toLocaleString("vi-VN")));
+    })))), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement("label", null, "Ghi ch\xFA chung"), /* @__PURE__ */ React.createElement("input", { type: "text", value: note, onChange: (e) => setNote(e.target.value), placeholder: "vd. \u0111\u01A1n gom, kh\xE1ch quen, \u0111\xE3 ship..." })), /* @__PURE__ */ React.createElement("div", { className: "unit-summary" }, /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "lbl" }, "T\u1ED5ng gi\xE1 b\xE1n"), /* @__PURE__ */ React.createElement("span", { className: "mono" }, totalSell.toLocaleString("vi-VN"), "K")), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "lbl" }, "L\u1EE3i nhu\u1EADn l\xF4"), /* @__PURE__ */ React.createElement("span", { className: `mono ${profit >= 0 ? "profit-pos" : "profit-neg"}` }, profit < 0 ? "\u2212" : "+", Math.abs(profit).toLocaleString("vi-VN"), "K")))), /* @__PURE__ */ React.createElement("div", { className: "modal-foot" }, /* @__PURE__ */ React.createElement("button", { className: "ctl ghost", onClick: onClose }, "HU\u1EF6"), /* @__PURE__ */ React.createElement("button", { className: "ctl primary", onClick: confirm2, disabled: !allValid, style: { opacity: allValid ? 1 : 0.5 } }, "X\xC1C NH\u1EACN B\xC1N ", units.length, " M\xD3N"))));
+  }
   function SellModal({ unit, today, onClose, onConfirm }) {
     const [sellPrice, setSellPrice] = useStateI(unit.expectedSell || unit.buy);
     const [soldDate, setSoldDate] = useStateI(today);
     const [note, setNote] = useStateI(unit.note || "");
     const profit = (+sellPrice || 0) - unit.buy;
     const ratio = unit.buy > 0 ? (+sellPrice || 0) / unit.buy * 100 : 0;
+    const showRatio = unit.cat !== "accessory";
     const isLoss = profit < 0;
     return /* @__PURE__ */ React.createElement("div", { className: "modal-bg", onClick: onClose }, /* @__PURE__ */ React.createElement("div", { className: "modal", onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { className: "modal-head" }, /* @__PURE__ */ React.createElement("div", { className: "modal-title" }, /* @__PURE__ */ React.createElement("span", { className: "accent" }), "GHI NH\u1EACN B\xC1N H\xC0NG"), /* @__PURE__ */ React.createElement("button", { className: "close-x", onClick: onClose }, "\xD7")), /* @__PURE__ */ React.createElement("div", { className: "modal-body" }, /* @__PURE__ */ React.createElement("div", { style: { background: "var(--bg-2)", border: "1px solid var(--border)", padding: "12px 14px", marginBottom: 18 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: "var(--muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" } }, "\u0110ang b\xE1n"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 16, fontWeight: 800, marginTop: 4 } }, unit.name), unit.variant && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: "var(--muted)", marginTop: 2 } }, "Variant: ", unit.variant), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: "var(--muted)", marginTop: 6 } }, "M\xE3 GD ", /* @__PURE__ */ React.createElement("span", { className: "mono", style: { color: "var(--text)", fontWeight: 700 } }, unit.transactionCode), " \xB7 \u0110\xE3 nh\u1EADp ", /* @__PURE__ */ React.createElement("span", { className: "mono", style: { color: "var(--text)", fontWeight: 700 } }, unit.buy.toLocaleString("vi-VN"), "K"), " \xB7 Ng\xE0y v\u1EC1 ", /* @__PURE__ */ React.createElement("span", { className: "mono", style: { color: "var(--text)", fontWeight: 700 } }, new Date(unit.arrived).toLocaleDateString("vi-VN")))), /* @__PURE__ */ React.createElement("div", { className: "field-row" }, /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement("label", null, "Gi\xE1 b\xE1n th\u1EF1c t\u1EBF (ngh\xECn)"), /* @__PURE__ */ React.createElement(
       "input",
@@ -234,7 +392,7 @@
         },
         autoFocus: true
       }
-    )), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement("label", null, "Ng\xE0y b\xE1n"), /* @__PURE__ */ React.createElement("input", { type: "date", value: soldDate, onChange: (e) => setSoldDate(e.target.value) }))), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement("label", null, "Ghi ch\xFA"), /* @__PURE__ */ React.createElement("input", { type: "text", value: note, onChange: (e) => setNote(e.target.value), placeholder: "vd. KH H\xE0 N\u1ED9i, ship 13/5, BH 15 ng\xE0y..." })), /* @__PURE__ */ React.createElement("div", { className: "unit-summary" }, /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "lbl" }, "L\u1EE3i nhu\u1EADn"), /* @__PURE__ */ React.createElement("span", { className: `mono ${isLoss ? "profit-neg" : "profit-pos"}`, style: { fontSize: 16 } }, isLoss ? "\u2212" : "+", Math.abs(profit).toLocaleString("vi-VN"), "K", isLoss && /* @__PURE__ */ React.createElement("span", { className: "loss-tag" }, "L\u1ED6"))), /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "lbl" }, "T\u1EC9 l\u1EC7 b\xE1n/mua"), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontWeight: 800, color: ratio >= 110 ? "#10b981" : ratio >= 100 ? "#f59e0b" : "#e11d48" } }, ratio.toFixed(1), "%")))), /* @__PURE__ */ React.createElement("div", { className: "modal-foot" }, /* @__PURE__ */ React.createElement("button", { className: "ctl ghost", onClick: onClose }, "HU\u1EF6"), /* @__PURE__ */ React.createElement("button", { className: "ctl primary", onClick: () => onConfirm(sellPrice, soldDate, note) }, "X\xC1C NH\u1EACN B\xC1N"))));
+    )), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement("label", null, "Ng\xE0y b\xE1n"), /* @__PURE__ */ React.createElement("input", { type: "date", value: soldDate, onChange: (e) => setSoldDate(e.target.value) }))), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement("label", null, "Ghi ch\xFA"), /* @__PURE__ */ React.createElement("input", { type: "text", value: note, onChange: (e) => setNote(e.target.value), placeholder: "vd. KH H\xE0 N\u1ED9i, ship 13/5, BH 15 ng\xE0y..." })), /* @__PURE__ */ React.createElement("div", { className: "unit-summary" }, /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "lbl" }, "L\u1EE3i nhu\u1EADn"), /* @__PURE__ */ React.createElement("span", { className: `mono ${isLoss ? "profit-neg" : "profit-pos"}`, style: { fontSize: 16 } }, isLoss ? "\u2212" : "+", Math.abs(profit).toLocaleString("vi-VN"), "K", isLoss && /* @__PURE__ */ React.createElement("span", { className: "loss-tag" }, "L\u1ED6"))), showRatio && /* @__PURE__ */ React.createElement("div", { className: "row" }, /* @__PURE__ */ React.createElement("span", { className: "lbl" }, "T\u1EC9 l\u1EC7 b\xE1n/mua"), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontWeight: 800, color: ratio >= 110 ? "#10b981" : ratio >= 100 ? "#f59e0b" : "#e11d48" } }, ratio.toFixed(1), "%")))), /* @__PURE__ */ React.createElement("div", { className: "modal-foot" }, /* @__PURE__ */ React.createElement("button", { className: "ctl ghost", onClick: onClose }, "HU\u1EF6"), /* @__PURE__ */ React.createElement("button", { className: "ctl primary", onClick: () => onConfirm(sellPrice, soldDate, note) }, "X\xC1C NH\u1EACN B\xC1N"))));
   }
   function normalizePriceExpression(value) {
     return String(value || "").replace(/\s+/g, "").replace(/,/g, ".");
@@ -316,7 +474,7 @@
       buy: "",
       expectedSell: "",
       quantity: 1,
-      arrived: today,
+      arrived: defaultArrivalDate(),
       note: ""
     });
     const [showQuickLine, setShowQuickLine] = useStateI(false);

@@ -1,6 +1,8 @@
 // Main app — owns the units state, passes actions down, handles authentication
 
 const { useState: useStateA, useEffect: useEffectA, useRef: useRefA } = React;
+const APP_CONFIG = window.NEXUS_GEAR_CONFIG || {};
+const ALLOW_WEB_EDIT = APP_CONFIG.allowWebEdit === true;
 
 // Temporary switch for development. Set false to restore login.
 const DEV_BYPASS_AUTH = true;
@@ -70,6 +72,26 @@ function loadAffiliateIncomes() {
     return normalizeAffiliateIncomes(Array.isArray(parsed) ? parsed : []);
   } catch (e) {
     console.error('Failed to load affiliate incomes from localStorage:', e);
+    return [];
+  }
+}
+
+function normalizeExtraExpenses(entries) {
+  return (entries || []).map(entry => ({
+    ...entry,
+    amount: Math.max(0, Math.round(+entry.amount || 0)),
+    spentAt: entry.spentAt || entry.receivedAt || new Date().toISOString().slice(0, 10),
+    note: String(entry.note || '').trim(),
+  }));
+}
+
+function loadExtraExpenses() {
+  try {
+    const saved = localStorage.getItem('nexus_gear_extra_expenses');
+    const parsed = saved ? JSON.parse(saved) : [];
+    return normalizeExtraExpenses(Array.isArray(parsed) ? parsed : []);
+  } catch (e) {
+    console.error('Failed to load extra expenses from localStorage:', e);
     return [];
   }
 }
@@ -148,7 +170,7 @@ function loadUnits() {
   }
 }
 
-function createSnapshot(units, productLines, categories, affiliateIncomes, dashboardSettings, tab, name, kind = 'manual') {
+function createSnapshot(units, productLines, categories, affiliateIncomes, extraExpenses, dashboardSettings, tab, name, kind = 'manual') {
   const createdAt = new Date().toISOString();
   return {
     id: `snap_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -160,6 +182,7 @@ function createSnapshot(units, productLines, categories, affiliateIncomes, dashb
     productLines: productLines.map(line => ({ ...line, variants: (line.variants || []).map(v => ({ ...v })) })),
     categories: categories.map(category => ({ ...category })),
     affiliateIncomes: normalizeAffiliateIncomes(affiliateIncomes).map(entry => ({ ...entry })),
+    extraExpenses: normalizeExtraExpenses(extraExpenses).map(entry => ({ ...entry })),
     dashboardSettings: {
       includePendingAffiliateInProfit: Boolean(dashboardSettings?.includePendingAffiliateInProfit),
     },
@@ -251,6 +274,7 @@ function unitHistoryValue(value) {
   if (value === undefined || value === null || value === '') return '\u2014';
   if (value === 'in_stock') return 'T\u1ed3n kho';
   if (value === 'sold') return '\u0110\u00e3 b\u00e1n';
+  if (value === 'returned') return 'H\u00e0ng ho\u00e0n';
   return String(value);
 }
 
@@ -288,12 +312,13 @@ function makeClientName(clientId) {
   return `Thiết bị ${shortId}`;
 }
 
-function buildSharedState(units, productLines, categories, affiliateIncomes, dashboardSettings, snapshots) {
+function buildSharedState(units, productLines, categories, affiliateIncomes, extraExpenses, dashboardSettings, snapshots) {
   return {
     units: units.map(unit => ({ ...unit })),
     productLines: productLines.map(line => cloneProductLine(line)),
     categories: categories.map(category => ({ ...category })),
     affiliateIncomes: normalizeAffiliateIncomes(affiliateIncomes).map(entry => ({ ...entry })),
+    extraExpenses: normalizeExtraExpenses(extraExpenses).map(entry => ({ ...entry })),
     dashboardSettings: {
       includePendingAffiliateInProfit: Boolean(dashboardSettings?.includePendingAffiliateInProfit),
     },
@@ -303,6 +328,7 @@ function buildSharedState(units, productLines, categories, affiliateIncomes, das
       productLines: (snapshot.productLines || []).map(line => cloneProductLine(line)),
       categories: (snapshot.categories || []).map(category => ({ ...category })),
       affiliateIncomes: normalizeAffiliateIncomes(snapshot.affiliateIncomes || []).map(entry => ({ ...entry })),
+      extraExpenses: normalizeExtraExpenses(snapshot.extraExpenses || []).map(entry => ({ ...entry })),
       dashboardSettings: {
         includePendingAffiliateInProfit: Boolean(snapshot.dashboardSettings?.includePendingAffiliateInProfit),
       },
@@ -339,6 +365,7 @@ function App() {
   const [categories, setCategories] = useStateA(() => loadCategories());
   const [productLines, setProductLines] = useStateA(() => loadProductLines());
   const [affiliateIncomes, setAffiliateIncomes] = useStateA(() => loadAffiliateIncomes());
+  const [extraExpenses, setExtraExpenses] = useStateA(() => loadExtraExpenses());
   const [dashboardSettings, setDashboardSettings] = useStateA(() => loadDashboardSettings());
   
   // Initialize units from localStorage, fallback to INITIAL_UNITS
@@ -355,7 +382,7 @@ function App() {
   const suppressRemoteSaveRef = useRefA(false);
   const saveTimerRef = useRefA(null);
   const serverVersionRef = useRefA(0);
-  const localSaveReadyRef = useRefA({ units: false, categories: false, productLines: false, affiliateIncomes: false, dashboardSettings: false, snapshots: false });
+  const localSaveReadyRef = useRefA({ units: false, categories: false, productLines: false, affiliateIncomes: false, extraExpenses: false, dashboardSettings: false, snapshots: false });
   const userDataDirtyRef = useRefA(false);
   window.CATEGORIES = categories;
   const markUserDataChanged = () => { userDataDirtyRef.current = true; };
@@ -398,6 +425,7 @@ function App() {
     setProductLines((payload.state.productLines || []).map(line => cloneProductLine(line)));
     setCategories(payload.state.categories?.length ? payload.state.categories : loadCategories());
     setAffiliateIncomes(normalizeAffiliateIncomes(payload.state.affiliateIncomes || []));
+    setExtraExpenses(normalizeExtraExpenses(payload.state.extraExpenses || []));
     setDashboardSettings({
       includePendingAffiliateInProfit: Boolean(payload.state.dashboardSettings?.includePendingAffiliateInProfit),
     });
@@ -407,6 +435,10 @@ function App() {
   };
 
   const acquireEditLock = async ({ silent = false } = {}) => {
+    if (!ALLOW_WEB_EDIT) {
+      setEditLock({ owned: false, lock: null });
+      return false;
+    }
     try {
       const res = await fetch('/api/lock/acquire', {
         method: 'POST',
@@ -471,7 +503,7 @@ function App() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 clientId: clientIdRef.current,
-                state: buildSharedState(units, productLines, categories, affiliateIncomes, dashboardSettings, snapshots),
+                state: buildSharedState(units, productLines, categories, affiliateIncomes, extraExpenses, dashboardSettings, snapshots),
               }),
             });
             payload = await bootstrapRes.json();
@@ -558,6 +590,18 @@ function App() {
   }, [affiliateIncomes]);
 
   useEffectA(() => {
+    if (!localSaveReadyRef.current.extraExpenses) {
+      localSaveReadyRef.current.extraExpenses = true;
+      return;
+    }
+    try {
+      localStorage.setItem('nexus_gear_extra_expenses', JSON.stringify(extraExpenses));
+    } catch (e) {
+      console.error('Failed to save extra expenses to localStorage:', e);
+    }
+  }, [extraExpenses]);
+
+  useEffectA(() => {
     if (!localSaveReadyRef.current.dashboardSettings) {
       localSaveReadyRef.current.dashboardSettings = true;
       return;
@@ -599,7 +643,7 @@ function App() {
           body: JSON.stringify({
             clientId: clientIdRef.current,
             version: serverVersionRef.current,
-            state: buildSharedState(units, productLines, categories, affiliateIncomes, dashboardSettings, snapshots),
+              state: buildSharedState(units, productLines, categories, affiliateIncomes, extraExpenses, dashboardSettings, snapshots),
           }),
         });
         const payload = await res.json();
@@ -637,7 +681,7 @@ function App() {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [units, productLines, categories, affiliateIncomes, dashboardSettings, snapshots, syncReady, syncMode, editLock.owned]);
+  }, [units, productLines, categories, affiliateIncomes, extraExpenses, dashboardSettings, snapshots, syncReady, syncMode, editLock.owned]);
 
   // View-only clients poll the canonical database so every device sees the same state.
   useEffectA(() => {
@@ -748,7 +792,7 @@ function App() {
     return window.hasPermission(session.user.role, tabName);
   };
 
-  const canEditSharedData = syncMode === 'shared' && editLock.owned;
+  const canEditSharedData = ALLOW_WEB_EDIT && syncMode === 'shared' && editLock.owned;
   const ensureCanEdit = () => {
     if (canEditSharedData) {
       markUserDataChanged();
@@ -861,7 +905,7 @@ function App() {
         id: u.id,
         transactionCode: u.transactionCode,
       };
-      if (next.status === 'in_stock') {
+      if (next.status !== 'sold') {
         delete next.sell;
         delete next.sold;
       }
@@ -930,6 +974,39 @@ function App() {
     setAffiliateIncomes(prev => prev.filter(entry => entry.id !== id));
   };
 
+  const addExtraExpense = (entry) => {
+    if (!ensureCanEdit()) return;
+    const amount = Math.max(0, Math.round(+entry.amount || 0));
+    if (!amount || !entry.spentAt) return;
+    setExtraExpenses(prev => [
+      {
+        id: `exp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        amount,
+        spentAt: entry.spentAt,
+        note: String(entry.note || '').trim(),
+      },
+      ...prev,
+    ]);
+  };
+
+  const updateExtraExpense = (id, patch) => {
+    if (!ensureCanEdit()) return;
+    setExtraExpenses(prev => prev.map(entry => {
+      if (entry.id !== id) return entry;
+      return {
+        ...entry,
+        amount: Math.max(0, Math.round(+patch.amount || 0)),
+        spentAt: patch.spentAt || entry.spentAt,
+        note: String(patch.note || '').trim(),
+      };
+    }));
+  };
+
+  const removeExtraExpense = (id) => {
+    if (!ensureCanEdit()) return;
+    setExtraExpenses(prev => prev.filter(entry => entry.id !== id));
+  };
+
   const setIncludePendingAffiliateInProfit = (value) => {
     if (!ensureCanEdit()) return;
     setDashboardSettings(prev => ({
@@ -947,7 +1024,7 @@ function App() {
 
   const saveSnapshot = (name) => {
     if (!ensureCanEdit()) return;
-    setSnapshots(prev => [createSnapshot(units, productLines, categories, affiliateIncomes, dashboardSettings, tab, name), ...prev]);
+    setSnapshots(prev => [createSnapshot(units, productLines, categories, affiliateIncomes, extraExpenses, dashboardSettings, tab, name), ...prev]);
     pushToast({
       type: 'success',
       title: 'Đã sao lưu',
@@ -965,6 +1042,7 @@ function App() {
       productLines,
       categories,
       affiliateIncomes,
+      extraExpenses,
       dashboardSettings,
       tab,
       makeAutoSnapshotName(snapshot.name),
@@ -975,6 +1053,7 @@ function App() {
     setCategories(snapshot.categories || categories);
     setProductLines((snapshot.productLines || productLines).map(line => cloneProductLine(line)));
     setAffiliateIncomes(normalizeAffiliateIncomes(snapshot.affiliateIncomes || []));
+    setExtraExpenses(normalizeExtraExpenses(snapshot.extraExpenses || []));
     setDashboardSettings({
       includePendingAffiliateInProfit: Boolean(snapshot.dashboardSettings?.includePendingAffiliateInProfit),
     });
@@ -1186,6 +1265,7 @@ function App() {
   };
 
   const inStock = units.filter(u => u.status === 'in_stock');
+  const inventoryUnits = units.filter(u => u.status === 'in_stock' || u.status === 'returned');
   const sold = units.filter(u => u.status === 'sold');
   const catalogLines = window.mergeCatalogWithUnits(productLines, units);
 
@@ -1266,7 +1346,7 @@ function App() {
             onRestore={restoreSnapshot}
             onDelete={deleteSnapshots}
           />
-          {syncMode === 'shared' && (
+          {ALLOW_WEB_EDIT && syncMode === 'shared' && (
             canEditSharedData ? (
               <button className="ctl ghost" onClick={() => releaseEditLock()}>
                 TRẢ QUYỀN SỬA
@@ -1324,6 +1404,7 @@ function App() {
                 units={units}
                 sold={sold}
                 affiliateIncomes={affiliateIncomes}
+                extraExpenses={extraExpenses}
                 includePendingAffiliateInProfit={dashboardSettings.includePendingAffiliateInProfit}
                 catalogLines={catalogLines}
                 today={today}
@@ -1337,6 +1418,9 @@ function App() {
                 onAddAffiliateIncome={addAffiliateIncome}
                 onUpdateAffiliateIncome={updateAffiliateIncome}
                 onRemoveAffiliateIncome={removeAffiliateIncome}
+                onAddExtraExpense={addExtraExpense}
+                onUpdateExtraExpense={updateExtraExpense}
+                onRemoveExtraExpense={removeExtraExpense}
                 onSetIncludePendingAffiliateInProfit={setIncludePendingAffiliateInProfit}
                 readOnly={!canEditSharedData}
               />
@@ -1344,11 +1428,11 @@ function App() {
             {tab === 'inventory' && (
               <Inventory
                 units={units}
-                inStock={inStock}
+                inStock={inventoryUnits}
                 catalogLines={catalogLines}
                 sellUnit={sellUnit}
                 updateNote={(id, note) => updateNote(id, note, 'S\u1eeda\u0020ghi\u0020ch\u00fa\u0020\u1edf\u0020kho')}
-                updateUnit={(id, patch) => updateUnit(id, patch, 'S\u1eeda\u0020giao\u0020d\u1ecbch\u0020\u1edf\u0020kho')}
+                updateUnit={(id, patch, action) => updateUnit(id, patch, action || 'S\u1eeda\u0020giao\u0020d\u1ecbch\u0020\u1edf\u0020kho')}
                 addUnit={addUnit}
                 importUnits={importUnits}
                 removeUnit={removeUnit}

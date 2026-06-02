@@ -377,6 +377,38 @@ input, select { font-family: inherit; }
   transform: translateY(-50%);
   color: var(--muted);
 }
+.date-range-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+}
+.date-range-filter label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.date-range-filter span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.date-range-filter input {
+  width: 128px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+}
 
 /* ===== KPI cards ===== */
 .kpi-grid {
@@ -444,6 +476,18 @@ input, select { font-family: inherit; }
 .aff-chip.pending {
   color: #b45309;
   background: #fef3c7;
+}
+.expense-mini-chip {
+  align-self: flex-start;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 11px;
+  margin-top: 6px;
+}
+.expense-mini-chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 .aff-profit-toggle {
   margin-top: 12px;
@@ -639,13 +683,113 @@ table.tbl {
   vertical-align: middle;
 }
 .tbl tbody tr:hover { background: #fafafd; }
+.tbl tbody tr.selected-row { background: #fff7ed; }
+.tbl tbody tr.returned-row {
+  background: #f8fafc;
+  color: var(--muted);
+}
+.tbl tbody tr.returned-row:hover { background: #f1f5f9; }
+.tbl tbody tr.returned-row .returned-money {
+  color: #94a3b8;
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: #cbd5e1;
+}
 .tbl .num { text-align: right; font-variant-numeric: tabular-nums; }
+.tbl .ratio-col {
+  width: 150px;
+  min-width: 150px;
+  text-align: center;
+}
+.tbl .select-col {
+  width: 38px;
+  min-width: 38px;
+  text-align: center;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+.tbl input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--red);
+  cursor: pointer;
+}
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 .tbl tfoot td {
   padding: 14px;
   font-weight: 800;
   background: #fafafd;
   border-top: 2px solid var(--border-strong);
   font-size: 13px;
+}
+
+.bulk-sell-modal {
+  width: min(980px, calc(100vw - 32px));
+}
+.bulk-sell-toolbar {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.9fr) minmax(260px, 1.4fr) minmax(150px, 0.8fr);
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+.bulk-sell-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-2);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.bulk-sell-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--red);
+}
+.bulk-sell-common,
+.bulk-sell-date {
+  display: grid;
+  gap: 6px;
+}
+.bulk-sell-common {
+  grid-template-columns: minmax(110px, 1fr) auto;
+}
+.bulk-sell-common label,
+.bulk-sell-date label {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.bulk-sell-common input,
+.bulk-sell-date input,
+.bulk-price-input {
+  height: 38px;
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 0 10px;
+  font: inherit;
+  font-family: var(--mono);
+}
+.bulk-sell-table-wrap {
+  max-height: 360px;
+  border: 1px solid var(--border-soft);
+  margin-bottom: 14px;
+}
+.bulk-sell-table .bulk-price-input {
+  width: 120px;
+  text-align: right;
 }
 
 .cat-pill {
@@ -686,12 +830,15 @@ table.tbl {
 }
 
 .rate-bar {
-  display: inline-flex;
+  display: inline-grid;
+  grid-template-columns: 66px 68px;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  width: 142px;
 }
 .rate-bar .bar {
-  width: 60px;
+  width: 66px;
   height: 4px;
   background: var(--bg-2);
   position: relative;
@@ -1055,6 +1202,28 @@ table.tbl {
   max-width: 520px;
   box-shadow: 0 25px 60px rgba(15,15,26,0.2);
 }
+.modal.bulk-sell-modal {
+  width: 70vw;
+  max-width: none;
+  height: 70vh;
+  display: flex;
+  flex-direction: column;
+}
+.modal.bulk-sell-modal .modal-head,
+.modal.bulk-sell-modal .modal-foot {
+  flex: none;
+}
+.modal.bulk-sell-modal .modal-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.modal.bulk-sell-modal .bulk-sell-table-wrap {
+  flex: 1;
+  max-height: none;
+  min-height: 260px;
+}
 .modal-head {
   padding: 18px 22px;
   border-bottom: 1px solid var(--border-soft);
@@ -1152,9 +1321,9 @@ table.tbl {
   padding: 24px;
 }
 .analytics-modal {
-  width: min(70vw, 1280px);
+  width: 80vw;
   max-width: none;
-  height: 70vh;
+  height: 80vh;
   display: flex;
   flex-direction: column;
 }
@@ -1162,6 +1331,8 @@ table.tbl {
   flex: none;
 }
 .analytics-body {
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   display: flex;
   flex-direction: column;
@@ -1263,6 +1434,10 @@ table.tbl {
 }
 .analytics-table {
   font-size: 12px;
+}
+.analytics-table thead th {
+  position: static;
+  top: auto;
 }
 .analytics-table tbody td {
   padding-top: 10px;
@@ -1913,6 +2088,7 @@ table.tbl {
 .status-ok    { color: var(--green); }    .status-ok .d    { background: var(--green); }
 .status-low   { color: var(--amber); }    .status-low .d   { background: var(--amber); }
 .status-out   { color: var(--red); }      .status-out .d   { background: var(--red); }
+.status-returned { color: #64748b; }      .status-returned .d { background: #64748b; }
 
 .cat-key { /* color anchors used inline */ }
 
@@ -2886,6 +3062,16 @@ table.tbl {
 }
 
 @media (max-width: 720px) {
+  .modal.bulk-sell-modal {
+    width: calc(100vw - 24px);
+    height: calc(100vh - 24px);
+  }
+  .modal.bulk-sell-modal .modal-body {
+    padding: 16px;
+  }
+  .bulk-sell-toolbar {
+    grid-template-columns: 1fr;
+  }
   .catalog-grid {
     grid-template-columns: 1fr;
   }
@@ -3015,4 +3201,845 @@ table.tbl {
   padding: 0 10px;
   font-family: inherit;
   font-weight: 700;
+}
+
+/* ==================== PHONE PORTRAIT LAYOUT ==================== */
+@media (max-width: 720px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  .topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px 12px;
+    align-items: center;
+    padding: 10px 12px 8px;
+  }
+  .logo {
+    min-width: 0;
+  }
+  .logo-mark {
+    width: 30px;
+    height: 30px;
+  }
+  .logo-name {
+    font-size: 15px;
+    white-space: nowrap;
+  }
+  .top-spacer {
+    display: none;
+  }
+  .top-meta {
+    justify-self: end;
+    gap: 6px;
+    font-size: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .top-meta > span[style] {
+    display: none !important;
+  }
+  .topbar > div:last-child {
+    grid-column: 1 / -1;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 6px !important;
+    width: 100%;
+  }
+  .topbar > div:last-child .ctl {
+    width: 100%;
+    justify-content: center;
+    min-height: 36px;
+    white-space: normal;
+    text-align: center;
+  }
+  .topbar > div:last-child .user-chip {
+    justify-self: end;
+  }
+  .history-open-btn {
+    white-space: normal;
+  }
+  .sync-chip {
+    font-size: 9px;
+    padding: 4px 6px;
+  }
+  .tabs {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin-left: 0;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .tab {
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    background: #fff;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+  .tab.active {
+    border-color: var(--red);
+    color: var(--red);
+    background: #fff1f2;
+  }
+  .tab.active::after {
+    display: none;
+  }
+  .sync-banner {
+    padding: 8px 12px;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .page-head {
+    display: block;
+    padding: 16px 12px 10px;
+  }
+  .page-title {
+    font-size: 22px;
+    line-height: 1.15;
+    gap: 10px;
+    letter-spacing: 0;
+  }
+  .page-title .accent {
+    height: 22px;
+  }
+  .page-sub {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .page-controls {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .page-controls > *,
+  .page-controls .ctl,
+  .page-controls select,
+  .page-controls .search,
+  .page-controls .search input,
+  .page-controls .date-range-filter,
+  .page-controls .dd-wrap,
+  .page-controls .dd-trigger {
+    width: 100%;
+    min-width: 0;
+  }
+  .date-range-filter {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: auto;
+  }
+  .date-range-filter label {
+    width: 100%;
+    min-width: 0;
+  }
+  .date-range-filter input {
+    width: 100%;
+    min-width: 0;
+  }
+  .date-range-filter .ctl {
+    grid-column: 1 / -1;
+  }
+  .page-controls .ctl,
+  .page-controls .dd-trigger {
+    justify-content: center;
+    min-height: 42px;
+  }
+  .dd-pop {
+    left: 0;
+    right: auto;
+    width: min(420px, calc(100vw - 24px));
+    min-width: 0;
+    max-height: 70vh;
+    overflow: auto;
+  }
+  .dd-presets,
+  .dd-months {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kpi-grid,
+  .inv-sum,
+  .charts-row,
+  .catalog-grid,
+  .store-grid {
+    padding-left: 12px;
+    padding-right: 12px;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .kpi {
+    padding: 14px 16px;
+  }
+  .kpi-value,
+  .inv-sum .kpi-value {
+    font-size: 24px;
+  }
+  .kpi-value.detailed {
+    font-size: 20px;
+  }
+  .kpi-delta {
+    flex-wrap: wrap;
+    gap: 6px 10px;
+  }
+  .kpi-spark {
+    display: none;
+  }
+  .kpi-gauge {
+    gap: 12px;
+    align-items: center;
+  }
+  .gauge-vis,
+  .gauge-vis svg {
+    width: 96px;
+    height: 96px;
+  }
+  .gauge-num .val {
+    font-size: 18px;
+  }
+  .gauge-num .lbl {
+    font-size: 8px;
+  }
+  .aff-profit-toggle {
+    width: 100%;
+    align-items: flex-start;
+    line-height: 1.35;
+  }
+
+  .chips {
+    padding: 0 12px 12px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .chips::-webkit-scrollbar {
+    display: none;
+  }
+  .chip {
+    flex: 0 0 auto;
+    min-height: 36px;
+    white-space: nowrap;
+  }
+
+  .card-head {
+    padding: 14px 14px 10px;
+    align-items: stretch;
+  }
+  .card-body {
+    padding: 14px;
+    overflow-x: auto;
+  }
+  .legend {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+  .ratio-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .stock-composition-section {
+    padding: 12px;
+  }
+  .stock-composition-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .stock-composition-visual {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .row-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
+    gap: 8px;
+  }
+  .row-actions .ctl,
+  .bulk-actions .ctl {
+    width: 100%;
+    justify-content: center;
+  }
+  .bulk-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .tbl-wrap {
+    overflow: visible;
+  }
+  .sales-mobile-table,
+  .inventory-mobile-table {
+    display: block;
+    width: 100%;
+    border-collapse: separate;
+  }
+  .sales-mobile-table thead,
+  .inventory-mobile-table thead {
+    display: none;
+  }
+  .sales-mobile-table tbody,
+  .sales-mobile-table tfoot,
+  .inventory-mobile-table tbody,
+  .inventory-mobile-table tfoot {
+    display: block;
+  }
+  .sales-mobile-table tbody tr,
+  .inventory-mobile-table tbody tr,
+  .sales-mobile-table tfoot tr,
+  .inventory-mobile-table tfoot tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+    margin-bottom: 10px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    background: #fff;
+    box-shadow: var(--shadow-sm);
+  }
+  .inventory-mobile-table tbody tr.selected-row {
+    background: #fff7ed;
+    border-color: #fed7aa;
+  }
+  .sales-mobile-table tbody td,
+  .inventory-mobile-table tbody td,
+  .sales-mobile-table tfoot td,
+  .inventory-mobile-table tfoot td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+    text-align: right;
+  }
+  .sales-mobile-table tbody td::before,
+  .inventory-mobile-table tbody td::before,
+  .sales-mobile-table tfoot td::before,
+  .inventory-mobile-table tfoot td::before {
+    color: var(--muted);
+    content: '';
+    flex: 0 0 auto;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-align: left;
+    text-transform: uppercase;
+  }
+  .sales-mobile-table tbody td:nth-child(1)::before { content: 'Mã GD'; }
+  .sales-mobile-table tbody td:nth-child(2)::before { content: 'Sản phẩm'; }
+  .sales-mobile-table tbody td:nth-child(3)::before { content: 'Danh mục'; }
+  .sales-mobile-table tbody td:nth-child(4)::before { content: 'Giá mua'; }
+  .sales-mobile-table tbody td:nth-child(5)::before { content: 'Giá bán'; }
+  .sales-mobile-table tbody td:nth-child(6)::before { content: 'Ngày về'; }
+  .sales-mobile-table tbody td:nth-child(7)::before { content: 'Ngày bán'; }
+  .sales-mobile-table tbody td:nth-child(8)::before { content: 'Lợi nhuận'; }
+  .sales-mobile-table tbody td:nth-child(9)::before { content: 'Tỉ lệ'; }
+  .sales-mobile-table tbody td:nth-child(10)::before { content: 'Ghi chú'; }
+  .sales-mobile-table tbody td:nth-child(11)::before { content: 'Thao tác'; }
+  .inventory-mobile-table tbody td:nth-child(1)::before { content: 'Chọn'; }
+  .inventory-mobile-table tbody td:nth-child(2)::before { content: 'Mã GD'; }
+  .inventory-mobile-table tbody td:nth-child(3)::before { content: 'Sản phẩm'; }
+  .inventory-mobile-table tbody td:nth-child(4)::before { content: 'Danh mục'; }
+  .inventory-mobile-table tbody td:nth-child(5)::before { content: 'Giá mua'; }
+  .inventory-mobile-table tbody td:nth-child(6)::before { content: 'Giá bán DK'; }
+  .inventory-mobile-table tbody td:nth-child(7)::before { content: 'Ngày về'; }
+  .inventory-mobile-table tbody td:nth-child(8)::before { content: 'Tồn'; }
+  .inventory-mobile-table tbody td:nth-child(9)::before { content: 'Ghi chú'; }
+  .inventory-mobile-table tbody td:nth-child(10)::before { content: 'Thao tác'; }
+  .sales-mobile-table tbody td:nth-child(2),
+  .sales-mobile-table tbody td:nth-child(10),
+  .sales-mobile-table tbody td:nth-child(11),
+  .inventory-mobile-table tbody td:nth-child(3),
+  .inventory-mobile-table tbody td:nth-child(9),
+  .inventory-mobile-table tbody td:nth-child(10) {
+    grid-column: 1 / -1;
+  }
+  .sales-mobile-table tbody td:nth-child(2),
+  .inventory-mobile-table tbody td:nth-child(3) {
+    display: block;
+    text-align: left;
+  }
+  .sales-mobile-table tbody td:nth-child(2)::before,
+  .inventory-mobile-table tbody td:nth-child(3)::before {
+    display: block;
+    margin-bottom: 6px;
+  }
+  .product-cell {
+    min-width: 0;
+  }
+  .note-input {
+    width: 100%;
+    min-width: 0;
+    min-height: 56px;
+  }
+  .rate-bar {
+    justify-content: flex-end;
+  }
+  .sales-mobile-table tfoot td:nth-child(1)::before,
+  .inventory-mobile-table tfoot td:nth-child(1)::before { content: 'Tổng'; }
+  .sales-mobile-table tfoot td:nth-child(2)::before,
+  .inventory-mobile-table tfoot td:nth-child(2)::before { content: 'Vốn'; }
+  .sales-mobile-table tfoot td:nth-child(3)::before,
+  .inventory-mobile-table tfoot td:nth-child(3)::before { content: 'Doanh thu'; }
+  .sales-mobile-table tfoot td:nth-child(5)::before { content: 'Lợi nhuận'; }
+  .sales-mobile-table tfoot td:nth-child(6)::before { content: 'Tỉ lệ'; }
+  .inventory-mobile-table tfoot td:nth-child(3)::before { content: 'Giá bán DK'; }
+  .sales-mobile-table tfoot td:empty,
+  .inventory-mobile-table tfoot td:empty {
+    display: none;
+  }
+  .sales-mobile-table tbody tr:has(.empty),
+  .inventory-mobile-table tbody tr:has(.empty) {
+    display: block;
+  }
+  .sales-mobile-table .empty,
+  .inventory-mobile-table .empty {
+    display: block;
+    padding: 28px 12px;
+    text-align: center;
+  }
+
+  .modal-bg,
+  .analytics-modal-bg,
+  .history-modal-bg {
+    align-items: start;
+    padding: 10px;
+    overflow: auto;
+    place-items: start center;
+  }
+  .modal,
+  .modal.stock-detail-modal,
+  .modal.bulk-sell-modal,
+  .analytics-modal,
+  .history-modal,
+  .affiliate-modal,
+  .edit-unit-modal,
+  .backup-modal,
+  .import-modal {
+    width: 100%;
+    max-width: none;
+    height: auto;
+    max-height: calc(100dvh - 20px);
+    overflow: auto;
+  }
+  .modal.bulk-sell-modal,
+  .analytics-modal,
+  .history-modal,
+  .modal.stock-detail-modal {
+    height: calc(100dvh - 20px);
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-head {
+    padding: 14px;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .modal-title {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .modal-body {
+    padding: 16px;
+  }
+  .modal-foot {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    padding: 12px;
+    background: #fff;
+    flex-wrap: wrap;
+  }
+  .modal-foot .ctl {
+    flex: 1 1 130px;
+    justify-content: center;
+  }
+  .field-row,
+  .field-row.three,
+  .field-row.four,
+  .affiliate-form-row,
+  .backup-save-row,
+  .import-top,
+  .history-filterbar {
+    grid-template-columns: 1fr;
+  }
+  .bulk-sell-toolbar,
+  .analytics-kpi-grid,
+  .analytics-grid,
+  .analytics-grid.two,
+  .analytics-grid.tables,
+  .stock-detail-kpis,
+  .stock-detail-grid,
+  .affiliate-summary,
+  .import-stats {
+    grid-template-columns: 1fr;
+  }
+  .bulk-sell-table-wrap,
+  .affiliate-table-wrap,
+  .history-modal-table-wrap {
+    overflow: auto;
+  }
+  .bulk-sell-table,
+  .analytics-table,
+  .affiliate-table-wrap .tbl,
+  .history-modal-table-wrap .tbl {
+    min-width: 720px;
+  }
+  .bulk-sell-common {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .bulk-sell-table .bulk-price-input {
+    width: 104px;
+  }
+
+  .prod-card:hover {
+    transform: none;
+  }
+  .prod-thumb {
+    aspect-ratio: 16 / 10;
+  }
+  .sf-footer-grid,
+  .sf-footer-bot,
+  .si-footer-cta {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: stretch;
+    width: auto;
+    margin-left: 12px;
+    margin-right: 12px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .sf-footer-grid {
+    padding-top: 28px;
+    gap: 22px;
+  }
+  .sf-footer-bot {
+    gap: 8px;
+  }
+  .si-hero {
+    padding: 36px 16px 28px;
+  }
+  .si-hero-title {
+    font-size: 38px;
+    letter-spacing: 0;
+  }
+  .si-hero-stats,
+  .si-warranty-grid,
+  .si-contact-grid,
+  .si-grid-2,
+  .si-grid-2-cards,
+  .pd-main,
+  .pd-secondary {
+    grid-template-columns: 1fr;
+  }
+  .si-section,
+  .pd-main,
+  .pd-secondary,
+  .pd-related,
+  .catalog-grid {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .pd-name {
+    font-size: 28px;
+    letter-spacing: 0;
+  }
+  .pd-price-row,
+  .pd-cta,
+  .pd-badges {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pd-buy,
+  .pd-cart {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) and (orientation: portrait) {
+  .app {
+    overflow-x: hidden;
+  }
+  .date-range-filter {
+    grid-template-columns: 1fr;
+  }
+  .topbar {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 9px 10px 8px;
+  }
+  .top-meta {
+    justify-self: stretch;
+    justify-content: flex-start;
+  }
+  .top-meta > span:not(.sync-chip) {
+    display: none;
+  }
+  .topbar > div:last-child {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .topbar > div:last-child .ctl {
+    min-height: 34px;
+    font-size: 10px;
+    padding: 6px 8px;
+  }
+  .topbar > div:last-child .user-chip {
+    display: none;
+  }
+  .tabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    overflow: visible;
+  }
+  .tab {
+    min-width: 0;
+    min-height: 34px;
+    padding: 0 4px;
+    white-space: normal;
+    text-align: center;
+    font-size: 10px;
+    line-height: 1.15;
+  }
+
+  .page-head {
+    padding: 14px 10px 8px;
+  }
+  .page-title {
+    font-size: 20px;
+  }
+  .page-sub {
+    font-size: 11px;
+  }
+  .page-controls {
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .ctl,
+  .dd-trigger {
+    letter-spacing: 0.02em;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.2;
+  }
+  .page-controls .ctl,
+  .page-controls .dd-trigger {
+    min-height: 38px;
+    font-size: 11px;
+  }
+
+  .kpi-grid,
+  .inv-sum,
+  .charts-row,
+  .catalog-grid,
+  .store-grid {
+    padding-left: 10px;
+    padding-right: 10px;
+    gap: 10px;
+  }
+  .kpi {
+    padding: 12px 14px;
+    overflow: visible;
+  }
+  .kpi-label {
+    font-size: 10px;
+    line-height: 1.25;
+  }
+  .kpi-value,
+  .inv-sum .kpi-value {
+    font-size: 22px;
+    overflow-wrap: anywhere;
+  }
+  .kpi-gauge {
+    display: grid;
+    grid-template-columns: 86px minmax(0, 1fr);
+    gap: 10px;
+  }
+  .kpi-gauge > div:last-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .gauge-vis,
+  .gauge-vis svg {
+    width: 86px;
+    height: 86px;
+  }
+  .gauge-num .val {
+    font-size: 16px;
+  }
+  .gauge-num .lbl {
+    max-width: 64px;
+    margin: -2px auto 0;
+    line-height: 1.15;
+    white-space: normal;
+  }
+  .inline-money-toggle {
+    overflow-wrap: anywhere;
+    text-align: left;
+  }
+
+  .chips {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .card-head {
+    padding: 12px;
+  }
+  .card-title {
+    font-size: 12px;
+    line-height: 1.35;
+    letter-spacing: 0.03em;
+  }
+  .card-sub {
+    line-height: 1.35;
+  }
+  .card-body {
+    padding: 12px;
+  }
+  .legend span {
+    line-height: 1.3;
+  }
+  .ratio-strip {
+    grid-template-columns: 1fr !important;
+  }
+
+  .sales-mobile-table tbody tr,
+  .inventory-mobile-table tbody tr,
+  .sales-mobile-table tfoot tr,
+  .inventory-mobile-table tfoot tr {
+    grid-template-columns: 1fr;
+    gap: 7px;
+    padding: 12px 10px;
+  }
+  .sales-mobile-table tbody td,
+  .inventory-mobile-table tbody td,
+  .sales-mobile-table tfoot td,
+  .inventory-mobile-table tfoot td {
+    display: grid;
+    grid-template-columns: minmax(78px, 28%) minmax(0, 1fr);
+    gap: 8px;
+    align-items: start;
+    justify-content: initial;
+    text-align: left;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .sales-mobile-table tbody td::before,
+  .inventory-mobile-table tbody td::before,
+  .sales-mobile-table tfoot td::before,
+  .inventory-mobile-table tfoot td::before {
+    line-height: 1.35;
+    padding-top: 1px;
+  }
+  .sales-mobile-table tbody td:nth-child(2),
+  .inventory-mobile-table tbody td:nth-child(3),
+  .sales-mobile-table tbody td:nth-child(10),
+  .sales-mobile-table tbody td:nth-child(11),
+  .inventory-mobile-table tbody td:nth-child(9),
+  .inventory-mobile-table tbody td:nth-child(10) {
+    display: block;
+  }
+  .sales-mobile-table tbody td:nth-child(2)::before,
+  .inventory-mobile-table tbody td:nth-child(3)::before,
+  .sales-mobile-table tbody td:nth-child(10)::before,
+  .sales-mobile-table tbody td:nth-child(11)::before,
+  .inventory-mobile-table tbody td:nth-child(9)::before,
+  .inventory-mobile-table tbody td:nth-child(10)::before {
+    display: block;
+    margin-bottom: 6px;
+  }
+  .sales-mobile-table .num,
+  .inventory-mobile-table .num {
+    text-align: left;
+  }
+  .txn-code {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .cat-pill,
+  .variant,
+  .product-cell .name {
+    overflow-wrap: anywhere;
+  }
+  .cat-pill {
+    white-space: normal;
+    text-align: left;
+  }
+  .product-cell {
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .rate-bar {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .rate-bar .bar {
+    flex: 1;
+    min-width: 48px;
+    max-width: 96px;
+  }
+  .note-input {
+    min-height: 64px;
+  }
+  .row-actions {
+    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+    gap: 6px;
+  }
+  .ctl.sm {
+    min-height: 32px;
+    height: auto;
+    padding: 6px 8px;
+  }
+
+  .modal-bg,
+  .analytics-modal-bg,
+  .history-modal-bg {
+    padding: 8px;
+  }
+  .modal,
+  .modal.stock-detail-modal,
+  .modal.bulk-sell-modal,
+  .analytics-modal,
+  .history-modal,
+  .affiliate-modal,
+  .edit-unit-modal,
+  .backup-modal,
+  .import-modal {
+    max-height: calc(100dvh - 16px);
+  }
+  .modal.bulk-sell-modal,
+  .analytics-modal,
+  .history-modal,
+  .modal.stock-detail-modal {
+    height: calc(100dvh - 16px);
+  }
+  .modal-head,
+  .modal-body,
+  .modal-foot {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .bulk-sell-common {
+    grid-template-columns: 1fr;
+  }
+  .bulk-sell-common .ctl {
+    width: 100%;
+    justify-content: center;
+  }
 }

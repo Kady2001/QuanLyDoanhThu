@@ -2,6 +2,16 @@
 
 const { useState: useStateI, useMemo: useMemoI } = React;
 
+function formatLocalDateInput(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function defaultArrivalDate(now = new Date()) {
+  const date = new Date(now);
+  if (date.getHours() < 6) date.setDate(date.getDate() - 1);
+  return formatLocalDateInput(date);
+}
+
 function Inventory({
   units,
   inStock,
@@ -21,12 +31,18 @@ function Inventory({
   const [search, setSearch] = useStateI('');
   const [cat, setCat] = useStateI('all');
   const [sort, setSort] = useStateI('arrived_desc');
+  const [arrivalFrom, setArrivalFrom] = useStateI('');
+  const [arrivalTo, setArrivalTo] = useStateI('');
   const [showAdd, setShowAdd] = useStateI(false);
   const [sellingUnit, setSellingUnit] = useStateI(null);
+  const [bulkSellingUnits, setBulkSellingUnits] = useStateI(null);
   const [editingUnit, setEditingUnit] = useStateI(null);
   const [selectedStructureCategoryId, setSelectedStructureCategoryId] = useStateI(null);
   const [lastAddedSelection, setLastAddedSelection] = useStateI(null);
+  const [selectedUnitIds, setSelectedUnitIds] = useStateI([]);
 
+  const activeStock = useMemoI(() => inStock.filter(unit => unit.status === 'in_stock'), [inStock]);
+  const returnedCount = inStock.filter(unit => unit.status === 'returned').length;
   const filtered = useMemoI(() => {
     let r = inStock.filter(p => {
       const s = search.toLowerCase();
@@ -35,7 +51,10 @@ function Inventory({
         || (p.variant || '').toLowerCase().includes(s)
         || (p.transactionCode || '').toLowerCase().includes(s);
       const matchCat = cat === 'all' || p.cat === cat;
-      return matchSearch && matchCat;
+      const arrived = p.arrived || '';
+      const matchDateFrom = !arrivalFrom || arrived >= arrivalFrom;
+      const matchDateTo = !arrivalTo || arrived <= arrivalTo;
+      return matchSearch && matchCat && matchDateFrom && matchDateTo;
     });
     r = r.slice().sort((a, b) => {
       if (sort === 'name') return a.name.localeCompare(b.name);
@@ -47,20 +66,52 @@ function Inventory({
       return 0;
     });
     return r;
-  }, [inStock, search, cat, sort]);
+  }, [inStock, search, cat, sort, arrivalFrom, arrivalTo]);
+  const selectedUnits = useMemoI(() => {
+    const selected = new Set(selectedUnitIds);
+    return activeStock.filter(unit => selected.has(unit.id));
+  }, [activeStock, selectedUnitIds]);
+  const filteredActive = filtered.filter(unit => unit.status === 'in_stock');
+  const filteredIds = filteredActive.map(unit => unit.id);
+  const allFilteredSelected = filteredIds.length > 0 && filteredIds.every(id => selectedUnitIds.includes(id));
+  const someFilteredSelected = filteredIds.some(id => selectedUnitIds.includes(id));
+  const toggleUnitSelection = (id) => {
+    if (!activeStock.some(unit => unit.id === id)) return;
+    setSelectedUnitIds(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]);
+  };
+  const toggleFilteredSelection = () => {
+    setSelectedUnitIds(prev => {
+      const filteredSet = new Set(filteredIds);
+      if (filteredIds.length > 0 && filteredIds.every(id => prev.includes(id))) {
+        return prev.filter(id => !filteredSet.has(id));
+      }
+      return [...new Set([...prev, ...filteredIds])];
+    });
+  };
+  const markReturned = (unit) => {
+    if (confirm(`Đánh dấu "${unit.name}${unit.variant ? ' · ' + unit.variant : ''}" là hàng hoàn? Món này sẽ không tính vào thống kê tiền.`)) {
+      updateUnit(unit.id, { status: 'returned' }, 'Đánh dấu hàng hoàn');
+      setSelectedUnitIds(prev => prev.filter(id => id !== unit.id));
+    }
+  };
+  const restoreReturned = (unit) => {
+    if (confirm(`Hủy hoàn "${unit.name}${unit.variant ? ' · ' + unit.variant : ''}" và đưa món này về tồn kho?`)) {
+      updateUnit(unit.id, { status: 'in_stock' }, 'Hủy hoàn hàng');
+    }
+  };
 
   // Summary
-  const totalUnits = inStock.length;
-  const totalValue = inStock.reduce((s, p) => s + p.buy, 0);
-  const totalSellValue = inStock.reduce((s, p) => s + (p.expectedSell || p.buy), 0);
+  const totalUnits = activeStock.length;
+  const totalValue = activeStock.reduce((s, p) => s + p.buy, 0);
+  const totalSellValue = activeStock.reduce((s, p) => s + (p.expectedSell || p.buy), 0);
   const expectedProfit = totalSellValue - totalValue;
 
   // Cat counts
   const catCounts = useMemoI(() => {
-    const m = { all: inStock.length };
-    inStock.forEach(p => { m[p.cat] = (m[p.cat] || 0) + 1; });
+    const m = { all: activeStock.length };
+    activeStock.forEach(p => { m[p.cat] = (m[p.cat] || 0) + 1; });
     return m;
-  }, [inStock]);
+  }, [activeStock]);
   const usedCategoryIds = useMemoI(() => new Set(units.map(unit => unit.cat)), [units]);
   const visibleCategories = useMemoI(
     () => window.CATEGORIES.filter(category => usedCategoryIds.has(category.id)),
@@ -71,7 +122,7 @@ function Inventory({
   const categoryStructure = useMemoI(() => {
     return window.CATEGORIES
       .map(category => {
-        const rows = inStock.filter(unit => unit.cat === category.id);
+        const rows = activeStock.filter(unit => unit.cat === category.id);
         const units = rows.length;
         const capital = rows.reduce((sum, unit) => sum + (+unit.buy || 0), 0);
         const expectedSell = rows.reduce((sum, unit) => sum + (+(unit.expectedSell || unit.buy) || 0), 0);
@@ -85,7 +136,7 @@ function Inventory({
         };
       })
       .filter(item => item.units > 0 || item.capital > 0);
-  }, [inStock, totalUnits, totalValue]);
+  }, [activeStock, totalUnits, totalValue]);
   const quantityDonutData = categoryStructure.map(item => ({
     categoryId: item.id,
     label: item.name,
@@ -104,7 +155,7 @@ function Inventory({
   const selectedCategoryLines = useMemoI(() => {
     if (!selectedStructureCategoryId) return [];
     const grouped = new Map();
-    inStock
+    activeStock
       .filter(unit => unit.cat === selectedStructureCategoryId)
       .forEach(unit => {
         const line = window.findCatalogLine(catalogLines, unit);
@@ -128,7 +179,7 @@ function Inventory({
         capitalShare: selectedStructureCategory?.capital > 0 ? (line.capital / selectedStructureCategory.capital) * 100 : 0,
       }))
       .sort((a, b) => b.capital - a.capital || b.quantity - a.quantity || a.name.localeCompare(b.name));
-  }, [selectedStructureCategoryId, selectedStructureCategory, inStock, catalogLines]);
+  }, [selectedStructureCategoryId, selectedStructureCategory, activeStock, catalogLines]);
 
   // Days in stock helper
   const daysInStock = (arrived) => {
@@ -141,7 +192,7 @@ function Inventory({
       <div className="page-head">
         <div>
           <h1 className="page-title"><span className="accent"></span>Quản lý kho hàng</h1>
-          <div className="page-sub">{totalUnits} đơn vị trong kho · mỗi dòng = 1 món riêng biệt</div>
+          <div className="page-sub">{totalUnits} đơn vị đang tính kho{returnedCount > 0 ? ` · ${returnedCount} hàng hoàn không tính tiền` : ''} · mỗi dòng = 1 món riêng biệt</div>
         </div>
         <div className="page-controls">
           <div className="search">
@@ -149,6 +200,24 @@ function Inventory({
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             </span>
             <input type="text" placeholder="Tìm theo mã / tên / variant..." value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
+          <div className="date-range-filter">
+            <label>
+              <span>Từ ngày</span>
+              <input type="date" value={arrivalFrom} onChange={e => setArrivalFrom(e.target.value)} />
+            </label>
+            <label>
+              <span>Đến ngày</span>
+              <input type="date" value={arrivalTo} onChange={e => setArrivalTo(e.target.value)} />
+            </label>
+            {(arrivalFrom || arrivalTo) && (
+              <button className="ctl ghost sm" type="button" onClick={() => {
+                setArrivalFrom('');
+                setArrivalTo('');
+              }}>
+                XÓA NGÀY
+              </button>
+            )}
           </div>
           <select className="ctl" value={sort} onChange={e => setSort(e.target.value)}>
             <option value="arrived_desc">MỚI VỀ TRƯỚC</option>
@@ -208,13 +277,38 @@ function Inventory({
           <div className="card-head">
             <div>
               <div className="card-title">Tồn kho chi tiết</div>
-              <div className="card-sub">{filtered.length} món · bấm BÁN để chuyển sang sổ doanh thu</div>
+              <div className="card-sub">{filtered.length} món · hàng hoàn vẫn lưu lịch sử nhưng không tính vào tiền kho/doanh thu</div>
+            </div>
+            <div className="bulk-actions">
+              <button
+                className="ctl ghost sm"
+                onClick={toggleFilteredSelection}
+                disabled={readOnly || filteredActive.length === 0}
+              >
+                {allFilteredSelected ? 'Bỏ chọn đang lọc' : someFilteredSelected ? 'Chọn thêm đang lọc' : 'Chọn tất cả'}
+              </button>
+              <button
+                className="ctl primary sm"
+                onClick={() => setBulkSellingUnits(selectedUnits)}
+                disabled={readOnly || selectedUnits.length === 0}
+              >
+                BÁN {selectedUnits.length > 0 ? `${selectedUnits.length} MÓN` : 'ĐÃ CHỌN'}
+              </button>
             </div>
           </div>
           <div className="tbl-wrap">
-            <table className="tbl">
+            <table className="tbl inventory-mobile-table">
               <thead>
                 <tr>
+                  <th className="select-col">
+                    <input
+                      type="checkbox"
+                      checked={allFilteredSelected}
+                      disabled={readOnly || filteredActive.length === 0}
+                      onChange={toggleFilteredSelection}
+                      title="Chọn tất cả dòng đang lọc"
+                    />
+                  </th>
                   <th>Mã GD</th>
                   <th>Sản phẩm</th>
                   <th>Danh mục</th>
@@ -230,8 +324,19 @@ function Inventory({
                 {filtered.map(p => {
                   const days = daysInStock(p.arrived);
                   const isAged = days > 14;
+                  const isReturned = p.status === 'returned';
+                  const selected = selectedUnitIds.includes(p.id);
                   return (
-                    <tr key={p.id}>
+                    <tr key={p.id} className={`${selected ? 'selected-row' : ''} ${isReturned ? 'returned-row' : ''}`}>
+                      <td className="select-col">
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          disabled={readOnly || isReturned}
+                          onChange={() => toggleUnitSelection(p.id)}
+                          title="Chọn để bán theo lô"
+                        />
+                      </td>
                       <td className="mono txn-code">{p.transactionCode}</td>
                       <td>
                         <div className="product-cell">
@@ -243,17 +348,17 @@ function Inventory({
                         </div>
                       </td>
                       <td><CatPill cat={p.cat} /></td>
-                      <td className="num mono">{p.buy.toLocaleString('vi-VN')}</td>
-                      <td className="num mono" style={{ fontWeight: 700, color: '#7c3aed' }}>
+                      <td className={`num mono ${isReturned ? 'returned-money' : ''}`}>{p.buy.toLocaleString('vi-VN')}</td>
+                      <td className={`num mono ${isReturned ? 'returned-money' : ''}`} style={{ fontWeight: 700, color: isReturned ? undefined : '#7c3aed' }}>
                         {(p.expectedSell || 0).toLocaleString('vi-VN')}
                       </td>
                       <td className="mono" style={{ fontSize: 12, color: '#6b6b80' }}>
                         {new Date(p.arrived).toLocaleDateString('vi-VN')}
                       </td>
                       <td>
-                        <span className={`status-tag ${isAged ? 'status-low' : 'status-ok'}`}>
+                        <span className={`status-tag ${isReturned ? 'status-returned' : isAged ? 'status-low' : 'status-ok'}`}>
                           <span className="d"></span>
-                          {days}N
+                          {isReturned ? 'HÀNG HOÀN' : `${days}N`}
                         </span>
                       </td>
                       <td>
@@ -270,9 +375,20 @@ function Inventory({
                           <button className="ctl ghost sm" onClick={() => setEditingUnit(p)} disabled={readOnly}>
                             SỬA
                           </button>
-                          <button className="ctl primary sm" onClick={() => setSellingUnit(p)} disabled={readOnly}>
-                            BÁN →
-                          </button>
+                          {isReturned ? (
+                            <button className="ctl primary sm" onClick={() => restoreReturned(p)} disabled={readOnly}>
+                              HỦY HOÀN
+                            </button>
+                          ) : (
+                            <>
+                              <button className="ctl ghost sm" onClick={() => markReturned(p)} disabled={readOnly}>
+                                HÀNG HOÀN
+                              </button>
+                              <button className="ctl primary sm" onClick={() => setSellingUnit(p)} disabled={readOnly}>
+                                BÁN →
+                              </button>
+                            </>
+                          )}
                           <button className="ctl ghost sm" disabled={readOnly} onClick={() => {
                             if (confirm(`Xoá "${p.name}${p.variant ? ' · ' + p.variant : ''}" khỏi kho?`)) removeUnit(p.id);
                           }} title="Xoá khỏi kho">
@@ -284,15 +400,15 @@ function Inventory({
                   );
                 })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan="9" className="empty">Không tìm thấy sản phẩm phù hợp</td></tr>
+                  <tr><td colSpan="10" className="empty">Không tìm thấy sản phẩm phù hợp</td></tr>
                 )}
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan="3">TỔNG ({filtered.length} món)</td>
-                  <td className="num mono">{filtered.reduce((s, p) => s + p.buy, 0).toLocaleString('vi-VN')}</td>
+                  <td colSpan="4">TỔNG ĐANG TÍNH ({filteredActive.length} món)</td>
+                  <td className="num mono">{filteredActive.reduce((s, p) => s + p.buy, 0).toLocaleString('vi-VN')}</td>
                   <td className="num mono profit-pos">
-                    {filtered.reduce((s, p) => s + (p.expectedSell || 0), 0).toLocaleString('vi-VN')}
+                    {filteredActive.reduce((s, p) => s + (p.expectedSell || 0), 0).toLocaleString('vi-VN')}
                   </td>
                   <td colSpan="4"></td>
                 </tr>
@@ -392,7 +508,20 @@ function Inventory({
           onClose={() => setSellingUnit(null)}
           onConfirm={(sellPrice, soldDate, note) => {
             sellUnit(sellingUnit.id, sellPrice, soldDate, note);
+            setSelectedUnitIds(prev => prev.filter(id => id !== sellingUnit.id));
             setSellingUnit(null);
+          }}
+        />
+      )}
+      {bulkSellingUnits && (
+        <BulkSellModal
+          units={bulkSellingUnits}
+          today={today}
+          onClose={() => setBulkSellingUnits(null)}
+          onConfirm={(sales, soldDate, note) => {
+            sales.forEach(sale => sellUnit(sale.id, sale.sellPrice, soldDate, note));
+            setSelectedUnitIds(prev => prev.filter(id => !sales.some(sale => sale.id === id)));
+            setBulkSellingUnits(null);
           }}
         />
       )}
@@ -523,6 +652,145 @@ function StockCategoryDetailModal({ category, lines, onClose }) {
   );
 }
 
+function BulkSellModal({ units, today, onClose, onConfirm }) {
+  const [soldDate, setSoldDate] = useStateI(today);
+  const [note, setNote] = useStateI('');
+  const [samePrice, setSamePrice] = useStateI(false);
+  const [commonPrice, setCommonPrice] = useStateI(units[0]?.expectedSell || units[0]?.buy || '');
+  const [prices, setPrices] = useStateI(() => {
+    const initial = {};
+    units.forEach(unit => {
+      initial[unit.id] = unit.expectedSell || unit.buy || '';
+    });
+    return initial;
+  });
+
+  const effectivePrices = units.map(unit => +(samePrice ? commonPrice : prices[unit.id]) || 0);
+  const totalBuy = units.reduce((sum, unit) => sum + (+unit.buy || 0), 0);
+  const totalSell = effectivePrices.reduce((sum, price) => sum + price, 0);
+  const profit = totalSell - totalBuy;
+  const allValid = units.length > 0 && effectivePrices.every(price => price > 0);
+
+  const applyCommonPrice = () => {
+    const value = commonPrice || '';
+    setPrices(prev => {
+      const next = { ...prev };
+      units.forEach(unit => { next[unit.id] = value; });
+      return next;
+    });
+  };
+
+  const confirm = () => {
+    if (!allValid) return;
+    const sales = units.map(unit => ({
+      id: unit.id,
+      sellPrice: samePrice ? commonPrice : prices[unit.id],
+    }));
+    onConfirm(sales, soldDate, note);
+  };
+
+  return (
+    <div className="modal-bg" onClick={onClose}>
+      <div className="modal bulk-sell-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-head">
+          <div>
+            <div className="modal-title"><span className="accent"></span>GHI NHẬN BÁN THEO LÔ</div>
+            <div className="card-sub">{units.length} món đang chọn</div>
+          </div>
+          <button className="close-x" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">
+          <div className="bulk-sell-toolbar">
+            <label className="bulk-sell-check">
+              <input type="checkbox" checked={samePrice} onChange={e => setSamePrice(e.target.checked)} />
+              <span>Bán tất cả cùng 1 giá</span>
+            </label>
+            <div className="bulk-sell-common">
+              <label>Giá chung (nghìn)</label>
+              <input
+                type="number"
+                value={commonPrice}
+                onChange={e => setCommonPrice(e.target.value)}
+                disabled={!samePrice}
+              />
+              <button className="ctl ghost sm" onClick={applyCommonPrice} disabled={!samePrice}>ÁP GIÁ</button>
+            </div>
+            <div className="bulk-sell-date">
+              <label>Ngày bán</label>
+              <input type="date" value={soldDate} onChange={e => setSoldDate(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="tbl-wrap bulk-sell-table-wrap">
+            <table className="tbl bulk-sell-table">
+              <thead>
+                <tr>
+                  <th>Mã GD</th>
+                  <th>Sản phẩm</th>
+                  <th className="num">Giá mua</th>
+                  <th className="num">Giá bán</th>
+                  <th className="num">Lãi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {units.map((unit, index) => {
+                  const sellPrice = effectivePrices[index];
+                  const rowProfit = sellPrice - (+unit.buy || 0);
+                  return (
+                    <tr key={unit.id}>
+                      <td className="mono txn-code">{unit.transactionCode}</td>
+                      <td>
+                        <div className="name">{unit.name}</div>
+                        {unit.variant && <span className="variant">{unit.variant}</span>}
+                      </td>
+                      <td className="num mono">{(+unit.buy || 0).toLocaleString('vi-VN')}</td>
+                      <td className="num">
+                        <input
+                          className="bulk-price-input"
+                          type="number"
+                          value={samePrice ? commonPrice : prices[unit.id]}
+                          disabled={samePrice}
+                          onChange={e => setPrices(prev => ({ ...prev, [unit.id]: e.target.value }))}
+                        />
+                      </td>
+                      <td className={`num mono ${rowProfit >= 0 ? 'profit-pos' : 'profit-neg'}`}>
+                        {rowProfit < 0 ? '−' : '+'}{Math.abs(rowProfit).toLocaleString('vi-VN')}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="field">
+            <label>Ghi chú chung</label>
+            <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="vd. đơn gom, khách quen, đã ship..." />
+          </div>
+          <div className="unit-summary">
+            <div className="row">
+              <span className="lbl">Tổng giá bán</span>
+              <span className="mono">{totalSell.toLocaleString('vi-VN')}K</span>
+            </div>
+            <div className="row">
+              <span className="lbl">Lợi nhuận lô</span>
+              <span className={`mono ${profit >= 0 ? 'profit-pos' : 'profit-neg'}`}>
+                {profit < 0 ? '−' : '+'}{Math.abs(profit).toLocaleString('vi-VN')}K
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="modal-foot">
+          <button className="ctl ghost" onClick={onClose}>HUỶ</button>
+          <button className="ctl primary" onClick={confirm} disabled={!allValid} style={{ opacity: allValid ? 1 : 0.5 }}>
+            XÁC NHẬN BÁN {units.length} MÓN
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SellModal({ unit, today, onClose, onConfirm }) {
   const [sellPrice, setSellPrice] = useStateI(unit.expectedSell || unit.buy);
   const [soldDate, setSoldDate] = useStateI(today);
@@ -530,6 +798,7 @@ function SellModal({ unit, today, onClose, onConfirm }) {
 
   const profit = (+sellPrice || 0) - unit.buy;
   const ratio = unit.buy > 0 ? ((+sellPrice || 0) / unit.buy) * 100 : 0;
+  const showRatio = unit.cat !== 'accessory';
   const isLoss = profit < 0;
 
   return (
@@ -584,12 +853,14 @@ function SellModal({ unit, today, onClose, onConfirm }) {
                 {isLoss && <span className="loss-tag">LỖ</span>}
               </span>
             </div>
-            <div className="row">
-              <span className="lbl">Tỉ lệ bán/mua</span>
-              <span className="mono" style={{ fontWeight: 800, color: ratio >= 110 ? '#10b981' : ratio >= 100 ? '#f59e0b' : '#e11d48' }}>
-                {ratio.toFixed(1)}%
-              </span>
-            </div>
+            {showRatio && (
+              <div className="row">
+                <span className="lbl">Tỉ lệ bán/mua</span>
+                <span className="mono" style={{ fontWeight: 800, color: ratio >= 110 ? '#10b981' : ratio >= 100 ? '#f59e0b' : '#e11d48' }}>
+                  {ratio.toFixed(1)}%
+                </span>
+              </div>
+            )}
           </div>
         </div>
         <div className="modal-foot">
@@ -690,7 +961,7 @@ function AddProductModal({ catalogLines, today, initialSelection, onCreateLine, 
   const [form, setForm] = useStateI({
     productLineId: firstLine?.id || '',
     variantId: firstVariant?.id || '',
-    buy: '', expectedSell: '', quantity: 1, arrived: today, note: '',
+    buy: '', expectedSell: '', quantity: 1, arrived: defaultArrivalDate(), note: '',
   });
   const [showQuickLine, setShowQuickLine] = useStateI(false);
   const [showQuickVariant, setShowQuickVariant] = useStateI(false);
@@ -936,3 +1207,5 @@ function QuickCreateVariantModal({ line, onClose, onSave }) {
 }
 
 window.Inventory = Inventory;
+
+

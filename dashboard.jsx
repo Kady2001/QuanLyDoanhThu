@@ -57,8 +57,7 @@ function dashboardRangeBounds(range, todayD) {
     return { start: dashAddDays(end, -6), end, days: 7 };
   }
   const start = new Date(range.year, range.month, 1);
-  const rawEnd = new Date(range.year, range.month + 1, 0);
-  const end = rawEnd > todayD ? dashDateOnly(todayD) : rawEnd;
+  const end = new Date(range.year, range.month + 1, 0);
   return { start, end, days: Math.max(1, Math.floor((end - start) / 86400000) + 1) };
 }
 
@@ -73,6 +72,7 @@ function Dashboard({
   units,
   sold,
   affiliateIncomes,
+  extraExpenses,
   includePendingAffiliateInProfit,
   catalogLines,
   today,
@@ -86,6 +86,9 @@ function Dashboard({
   onAddAffiliateIncome,
   onUpdateAffiliateIncome,
   onRemoveAffiliateIncome,
+  onAddExtraExpense,
+  onUpdateExtraExpense,
+  onRemoveExtraExpense,
   onSetIncludePendingAffiliateInProfit,
   readOnly = false,
 }) {
@@ -95,11 +98,13 @@ function Dashboard({
     year: todayD.getFullYear(),
     month: todayD.getMonth(),
   }));
+  const [search, setSearch] = useStateD('');
   const [catFilter, setCatFilter] = useStateD('all');
   const [confirmCancel, setConfirmCancel] = useStateD(null);
   const [editingUnit, setEditingUnit] = useStateD(null);
   const [showAnalytics, setShowAnalytics] = useStateD(false);
   const [showAffiliateModal, setShowAffiliateModal] = useStateD(false);
+  const [showExpenseModal, setShowExpenseModal] = useStateD(false);
   const [detailedMode, setDetailedMode] = useStateD(false);
 
   // Format function that toggles between compact (M) and detailed (thousands)
@@ -134,9 +139,15 @@ function Dashboard({
     return sold.filter(s => {
       const d = new Date(s.sold);
       const inCat = catFilter === 'all' || s.cat === catFilter;
-      return inPeriod(d, range) && inCat;
+      const q = search.trim().toLowerCase();
+      const matchSearch = !q
+        || (s.transactionCode || '').toLowerCase().includes(q)
+        || (s.name || '').toLowerCase().includes(q)
+        || (s.variant || '').toLowerCase().includes(q)
+        || (s.note || '').toLowerCase().includes(q);
+      return inPeriod(d, range) && inCat && matchSearch;
     });
-  }, [sold, range, catFilter]);
+  }, [sold, range, catFilter, search]);
 
   const periodAffiliateEntries = useMemoD(() => {
     return (affiliateIncomes || []).filter(entry => inPeriod(new Date(entry.receivedAt), range));
@@ -147,31 +158,44 @@ function Dashboard({
   const pendingAffiliateIncome = pendingAffiliateEntries.reduce((sum, entry) => sum + (+entry.amount || 0), 0);
   const totalAffiliateIncome = paidAffiliateIncome + pendingAffiliateIncome;
   const affiliateIncomeUsedInProfit = paidAffiliateIncome + (includePendingAffiliateInProfit ? pendingAffiliateIncome : 0);
+  const periodExtraExpenses = useMemoD(() => {
+    return (extraExpenses || []).filter(entry => inPeriod(new Date(entry.spentAt), range));
+  }, [extraExpenses, range]);
+  const totalExtraExpense = periodExtraExpenses.reduce((sum, entry) => sum + (+entry.amount || 0), 0);
   const includeAffiliateInProfit = catFilter === 'all';
   const totalRev = filtered.reduce((s, x) => s + x.sell, 0);
   const totalBuy = filtered.reduce((s, x) => s + x.buy, 0);
   const salesProfit = totalRev - totalBuy;
-  const totalProfit = salesProfit + (includeAffiliateInProfit ? affiliateIncomeUsedInProfit : 0);
+  const monthlyAdjustmentProfit = includeAffiliateInProfit ? affiliateIncomeUsedInProfit - totalExtraExpense : 0;
+  const totalProfit = salesProfit + monthlyAdjustmentProfit;
+  const affiliateIncomeUsedInRatio = includeAffiliateInProfit ? affiliateIncomeUsedInProfit : 0;
+  const ratioIncludesAffiliate = affiliateIncomeUsedInRatio > 0;
+  const affiliateAdjustedRevenue = totalRev + affiliateIncomeUsedInRatio;
   const profitLabel = !includeAffiliateInProfit
     ? 'Lợi nhuận bán hàng'
+    : totalExtraExpense > 0
+      ? 'Lợi nhuận cuối sau chi phí'
     : includePendingAffiliateInProfit && pendingAffiliateIncome > 0
       ? 'Lợi nhuận dự kiến sau AFF'
       : pendingAffiliateIncome > 0
-        ? 'Lợi nhuận sau AFF đã trả'
+        ? 'Lợi nhuận sau AFF'
         : 'Lợi nhuận sau AFF';
   const itemsSold = filtered.length;
   const lossCount = filtered.filter(x => x.sell < x.buy).length;
-  const avgRatio = totalBuy > 0 ? (totalRev / totalBuy) * 100 : 0;
-  const periodEndDate = rangeBounds.end;
+  const salesAvgRatio = totalBuy > 0 ? (totalRev / totalBuy) * 100 : 0;
+  const avgRatio = totalBuy > 0 ? (affiliateAdjustedRevenue / totalBuy) * 100 : 0;
   const inventoryValueAt = (date) => units
     .filter(u => {
       const arrived = new Date(u.arrived);
       const soldDate = u.sold ? new Date(u.sold) : null;
       const inCat = catFilter === 'all' || u.cat === catFilter;
-      return inCat && arrived <= date && (!soldDate || soldDate > date);
+      return inCat && u.status !== 'returned' && arrived <= date && (!soldDate || soldDate > date);
     })
     .reduce((sum, u) => sum + u.buy, 0);
-  const currentInventoryValue = inventoryValueAt(periodEndDate);
+  const currentInventory = useMemoD(() => (
+    units.filter(u => u.status === 'in_stock' && (catFilter === 'all' || u.cat === catFilter))
+  ), [units, catFilter]);
+  const currentInventoryValue = currentInventory.reduce((sum, unit) => sum + (+unit.buy || 0), 0);
 
   // prev period delta ? compare against the immediately previous period with the same length.
   const prevDelta = useMemoD(() => {
@@ -189,21 +213,26 @@ function Dashboard({
     });
     const pRev = prev.reduce((s, x) => s + x.sell, 0);
     const pSalesProfit = prev.reduce((s, x) => s + (x.sell - x.buy), 0);
-    const pAffiliateIncome = (affiliateIncomes || [])
-      .filter(entry => {
-        const includedByStatus = entry.status !== 'pending' || includePendingAffiliateInProfit;
-        return inPrevRange(entry.receivedAt) && includedByStatus;
-      })
+    const prevAffiliateEntries = (affiliateIncomes || []).filter(entry => inPrevRange(entry.receivedAt));
+    const prevPaidAffiliateIncome = prevAffiliateEntries
+      .filter(entry => entry.status !== 'pending')
       .reduce((sum, entry) => sum + (+entry.amount || 0), 0);
-    const pProfit = pSalesProfit + (includeAffiliateInProfit ? pAffiliateIncome : 0);
+    const prevPendingAffiliateIncome = prevAffiliateEntries
+      .filter(entry => entry.status === 'pending')
+      .reduce((sum, entry) => sum + (+entry.amount || 0), 0);
+    const prevAffiliateIncomeUsed = prevPaidAffiliateIncome + (includePendingAffiliateInProfit ? prevPendingAffiliateIncome : 0);
+    const prevExtraExpense = (extraExpenses || [])
+      .filter(entry => inPrevRange(entry.spentAt))
+      .reduce((sum, entry) => sum + (+entry.amount || 0), 0);
+    const pTotalProfit = pSalesProfit + (catFilter === 'all' ? prevAffiliateIncomeUsed - prevExtraExpense : 0);
     const prevInventoryValue = inventoryValueAt(prevEnd);
     return {
       rev:    pRev    !== 0 ? ((totalRev    - pRev)    / Math.abs(pRev))    * 100 : null,
-      profit: pProfit !== 0 ? ((totalProfit - pProfit) / Math.abs(pProfit)) * 100 : null,
+      profit: pTotalProfit !== 0 ? ((totalProfit - pTotalProfit) / Math.abs(pTotalProfit)) * 100 : null,
       items:  prev.length    ? ((itemsSold  - prev.length) / prev.length)   * 100 : null,
       inventory: prevInventoryValue !== 0 ? ((currentInventoryValue - prevInventoryValue) / Math.abs(prevInventoryValue)) * 100 : null,
     };
-  }, [sold, rangeBounds, catFilter, totalRev, totalProfit, itemsSold, currentInventoryValue, units, affiliateIncomes, includeAffiliateInProfit, includePendingAffiliateInProfit]);
+  }, [sold, affiliateIncomes, extraExpenses, rangeBounds, catFilter, totalRev, totalProfit, itemsSold, currentInventoryValue, units, includePendingAffiliateInProfit]);
 
 
   // Line chart: bucket by day in the selected range.
@@ -211,7 +240,7 @@ function Dashboard({
     const buckets = [];
     for (let i = 0; i < rangeBounds.days; i++) {
       const d = dashAddDays(rangeBounds.start, i);
-      buckets.push({ date: d, rev: 0, salesProfit: 0, affiliate: 0, profit: 0, inventory: inventoryValueAt(d) });
+      buckets.push({ date: d, rev: 0, salesProfit: 0, profit: 0, inventory: inventoryValueAt(d) });
     }
     filtered.forEach(s => {
       const sd = dashDateOnly(s.sold);
@@ -221,27 +250,17 @@ function Dashboard({
         buckets[idx].salesProfit += (s.sell - s.buy);
       }
     });
-    if (includeAffiliateInProfit) {
-      periodAffiliateEntries
-        .filter(entry => entry.status !== 'pending' || includePendingAffiliateInProfit)
-        .forEach(entry => {
-          const receivedAt = dashDateOnly(entry.receivedAt);
-          const idx = buckets.findIndex(b => b.date.getTime() === receivedAt.getTime());
-          if (idx >= 0) buckets[idx].affiliate += (+entry.amount || 0);
-        });
-    }
     buckets.forEach(bucket => {
-      bucket.profit = bucket.salesProfit + bucket.affiliate;
+      bucket.profit = bucket.salesProfit;
     });
     return {
       days: buckets.map(b => `${b.date.getDate()}/${b.date.getMonth() + 1}`),
       rev: buckets.map(b => b.rev),
       salesProfit: buckets.map(b => b.salesProfit),
-      affiliate: buckets.map(b => b.affiliate),
       profit: buckets.map(b => b.profit),
       inventory: buckets.map(b => b.inventory),
     };
-  }, [filtered, rangeBounds, units, catFilter, periodAffiliateEntries, includeAffiliateInProfit, includePendingAffiliateInProfit]);
+  }, [filtered, rangeBounds, units, catFilter]);
 
 
   // Bar chart: profit by CATEGORY (already aggregated correctly)
@@ -265,6 +284,7 @@ function Dashboard({
       map[s.cat].sell += s.sell;
     });
     return window.CATEGORIES
+      .filter(c => c.id !== 'accessory')
       .map(c => ({ ...c, ratio: map[c.id] ? (map[c.id].sell / map[c.id].buy) * 100 : null }))
       .filter(c => c.ratio !== null)
       .sort((a, b) => b.ratio - a.ratio);
@@ -287,9 +307,6 @@ function Dashboard({
     ...sold.map(s => ({ date: s.sold })),
     ...(affiliateIncomes || []).map(entry => ({ date: entry.receivedAt })),
   ], [sold, affiliateIncomes]);
-  const currentInventory = useMemoD(() => (
-    units.filter(u => u.status === 'in_stock' && (catFilter === 'all' || u.cat === catFilter))
-  ), [units, catFilter]);
   const revenueByCat = useMemoD(() => {
     const map = {};
     filtered.forEach(s => {
@@ -312,6 +329,10 @@ function Dashboard({
       map[key].profit += s.sell - s.buy;
     });
     return Object.values(map)
+      .map(item => ({
+        ...item,
+        avgProfit: item.qty > 0 ? Math.round(item.profit / item.qty) : 0,
+      }))
       .sort((a, b) => b.revenue - a.revenue || b.qty - a.qty)
       .slice(0, 8);
   }, [filtered]);
@@ -337,6 +358,12 @@ function Dashboard({
           </div>
         </div>
         <div className="page-controls">
+          <div className="search">
+            <span className="search-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            </span>
+            <input type="text" placeholder="Tìm theo mã / tên / variant..." value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
           <ImportDataButton today={today} onImport={importUnits} disabled={readOnly} />
           <ExportDataButton units={units} today={today} />
           <CategoryPicker value={catFilter} onChange={setCatFilter} counts={catCounts} categories={visibleCategories} />
@@ -374,6 +401,18 @@ function Dashboard({
           title={moneyToggleTitle}
         >
           <div className="kpi-label">{profitLabel}</div>
+          <button
+            type="button"
+            className={`aff-chip expense-mini-chip ${totalExtraExpense > 0 ? 'pending' : 'paid'}`}
+            onClick={e => {
+              e.stopPropagation();
+              setShowExpenseModal(true);
+            }}
+            disabled={readOnly && periodExtraExpenses.length === 0}
+            title="Quản lý chi phí phụ trong tháng"
+          >
+            Chi phí phụ {totalExtraExpense > 0 ? `-${fmtAmount(totalExtraExpense)} ${moneyUnit}` : '+ nhập'}
+          </button>
           <div className={`kpi-value mono ${detailedMode ? 'detailed' : ''}`} style={{ color: totalProfit >= 0 ? '#10b981' : '#e11d48' }}>
             {totalProfit < 0 ? '−' : ''}{fmtAmount(Math.abs(totalProfit))}<span className="unit">{moneyUnit}</span>
           </div>
@@ -476,7 +515,7 @@ function Dashboard({
         <div className="kpi purple">
           <div className="kpi-label">Tỉ lệ bán / mua trung bình</div>
           <div className="kpi-gauge" style={{ marginTop: 6 }}>
-            <Gauge value={avgRatio} label="bán/mua" />
+            <Gauge value={avgRatio} label={ratioIncludesAffiliate ? 'tính cả AFF' : 'bán/mua'} />
             <div>
               <div style={{ fontSize: 10, color: '#9a9aae', fontWeight: 800, letterSpacing: '0.08em' }}>
                 {!includeAffiliateInProfit
@@ -498,6 +537,9 @@ function Dashboard({
                 >
                   {fmtAmount(totalBuy)} {moneyUnit}
                 </button>
+                {ratioIncludesAffiliate && (
+                  <span> · tính cả AFF {fmtAmount(affiliateIncomeUsedInRatio)} {moneyUnit}</span>
+                )}
               </div>
             </div>
           </div>
@@ -510,20 +552,20 @@ function Dashboard({
           <div className="card-head">
             <div>
               <button className="card-title analytics-title-btn" onClick={() => setShowAnalytics(true)}>
-                Doanh thu & {profitLabel}
+                Doanh thu & Lợi nhuận bán hàng
               </button>
               <div className="card-sub">Theo ngày · {rangeLabel}</div>
             </div>
             <div className="legend">
               <span><i className="swatch" style={{ background: '#e11d48' }}></i>Doanh thu</span>
-              <span><i className="swatch" style={{ background: '#10b981' }}></i>{profitLabel}</span>
+              <span><i className="swatch" style={{ background: '#10b981' }}></i>Lợi nhuận bán hàng</span>
             </div>
           </div>
           <div className="card-body">
             <LineChart
               series={[
                 { name: 'Doanh thu', color: '#e11d48', data: lineData.rev },
-                { name: profitLabel, color: '#10b981', data: lineData.profit },
+                { name: 'Lợi nhuận bán hàng', color: '#10b981', data: lineData.profit },
               ]}
               days={lineData.days}
             />
@@ -557,7 +599,7 @@ function Dashboard({
                 <div className="card-sub">So sánh hiệu suất từng nhóm sản phẩm</div>
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${ratioByCat.length}, 1fr)`, gap: 1, background: 'var(--border-soft)' }}>
+            <div className="ratio-strip" style={{ display: 'grid', gridTemplateColumns: `repeat(${ratioByCat.length}, 1fr)`, gap: 1, background: 'var(--border-soft)' }}>
               {ratioByCat.map(c => {
                 const color = c.ratio >= 130 ? '#10b981' : c.ratio >= 110 ? '#f59e0b' : c.ratio >= 100 ? '#ff6a3d' : '#e11d48';
                 return (
@@ -584,7 +626,7 @@ function Dashboard({
           </div>
         </div>
         <div className="tbl-wrap">
-          <table className="tbl">
+          <table className="tbl sales-mobile-table">
             <thead>
               <tr>
                 <th>Mã GD</th>
@@ -595,7 +637,7 @@ function Dashboard({
                 <th>Ngày về</th>
                 <th>Ngày bán</th>
                 <th className="num">Lợi nhuận</th>
-                <th>Tỉ lệ</th>
+                <th className="ratio-col">Tỉ lệ</th>
                 <th>Ghi chú</th>
                 <th></th>
               </tr>
@@ -607,6 +649,7 @@ function Dashboard({
                 .map(s => {
                   const profit = s.sell - s.buy;
                   const ratio = (s.sell / s.buy) * 100;
+                  const showRatio = s.cat !== 'accessory';
                   const isLoss = profit < 0;
                   return (
                     <tr key={s.id}>
@@ -630,7 +673,7 @@ function Dashboard({
                         {isLoss ? '−' : profit > 0 ? '+' : ''}{Math.abs(profit).toLocaleString('vi-VN')}
                         {isLoss && <span className="loss-tag">LỖ</span>}
                       </td>
-                      <td><RateBar pct={ratio} /></td>
+                      <td className="ratio-col">{showRatio ? <RateBar pct={ratio} /> : <span className="muted">—</span>}</td>
                       <td>
                         <textarea
                           className="note-input"
@@ -667,7 +710,7 @@ function Dashboard({
                   {salesProfit < 0 ? '−' : '+'}{Math.abs(salesProfit).toLocaleString('vi-VN')}
                 </td>
                 <td className="mono" style={{ color: salesProfit >= 0 ? '#10b981' : '#e11d48', fontWeight: 800 }}>
-                  {avgRatio.toFixed(1)}%
+                  {catFilter === 'accessory' ? '—' : `${salesAvgRatio.toFixed(1)}%`}
                 </td>
                 <td colSpan="2"></td>
               </tr>
@@ -710,6 +753,8 @@ function Dashboard({
           paidAffiliateIncome={paidAffiliateIncome}
           pendingAffiliateIncome={pendingAffiliateIncome}
           affiliateIncomeUsedInProfit={affiliateIncomeUsedInProfit}
+          extraExpenseEntries={periodExtraExpenses}
+          totalExtraExpense={totalExtraExpense}
           includeAffiliateInProfit={includeAffiliateInProfit}
           includePendingAffiliateInProfit={includePendingAffiliateInProfit}
           totalBuy={totalBuy}
@@ -741,6 +786,19 @@ function Dashboard({
           onClose={() => setShowAffiliateModal(false)}
         />
       )}
+      {showExpenseModal && (
+        <ExtraExpenseModal
+          entries={periodExtraExpenses}
+          range={range}
+          rangeLabel={rangeLabel}
+          today={today}
+          readOnly={readOnly}
+          onAdd={onAddExtraExpense}
+          onUpdate={onUpdateExtraExpense}
+          onDelete={onRemoveExtraExpense}
+          onClose={() => setShowExpenseModal(false)}
+        />
+      )}
     </div>
   );
 }
@@ -756,6 +814,8 @@ function SalesAnalyticsModal({
   paidAffiliateIncome,
   pendingAffiliateIncome,
   affiliateIncomeUsedInProfit,
+  extraExpenseEntries,
+  totalExtraExpense,
   includeAffiliateInProfit,
   includePendingAffiliateInProfit,
   totalBuy,
@@ -808,15 +868,15 @@ function SalesAnalyticsModal({
               sub={`AFF tính vào lãi ${window.fmtK(affiliateIncomeUsedInProfit)}đ`}
               tone="green"
             />
-            <AnalyticsMetric label="Vốn tồn cuối kỳ" value={`${window.fmtK(currentInventoryValue)}đ`} sub={`${currentInventory.length} món đang tồn`} tone="blue" />
+            <AnalyticsMetric label="Vốn tồn hiện tại" value={`${window.fmtK(currentInventoryValue)}đ`} sub={`${currentInventory.length} món đang tồn`} tone="blue" />
           </div>
 
           <div className="analytics-grid two">
-            <AnalyticsPanel title={`Doanh thu & ${profitLabel.toLowerCase()} theo ngày`} subtitle={rangeLabel}>
+            <AnalyticsPanel title="Doanh thu & lợi nhuận bán hàng theo ngày" subtitle={rangeLabel}>
               <LineChart
                 series={[
                   { name: 'Doanh thu', color: '#e11d48', data: lineData.rev },
-                  { name: profitLabel, color: '#10b981', data: lineData.profit },
+                  { name: 'Lợi nhuận bán hàng', color: '#10b981', data: lineData.profit },
                 ]}
                 days={lineData.days}
               />
@@ -896,7 +956,7 @@ function SalesAnalyticsModal({
             <AnalyticsPanel title="Top sản phẩm" subtitle="Theo doanh thu tháng">
               <table className="tbl analytics-table">
                 <thead>
-                  <tr><th>Sản phẩm</th><th className="num">SL</th><th className="num">Doanh thu</th><th className="num">Lợi nhuận</th></tr>
+                  <tr><th>Sản phẩm</th><th className="num">SL</th><th className="num">Doanh thu</th><th className="num">Lợi nhuận TB</th></tr>
                 </thead>
                 <tbody>
                   {topProducts.map(item => (
@@ -904,8 +964,8 @@ function SalesAnalyticsModal({
                       <td>{item.name}</td>
                       <td className="num mono">{item.qty}</td>
                       <td className="num mono">{item.revenue.toLocaleString('vi-VN')}</td>
-                      <td className={`num mono ${item.profit >= 0 ? 'profit-pos' : 'profit-neg'}`}>
-                        {item.profit < 0 ? '−' : '+'}{Math.abs(item.profit).toLocaleString('vi-VN')}
+                      <td className={`num mono ${item.avgProfit >= 0 ? 'profit-pos' : 'profit-neg'}`}>
+                        {item.avgProfit < 0 ? '−' : '+'}{Math.abs(item.avgProfit).toLocaleString('vi-VN')}
                       </td>
                     </tr>
                   ))}
@@ -1187,6 +1247,178 @@ function AffiliateIncomeModal({
                 ))}
                 {orderedEntries.length === 0 && (
                   <tr><td colSpan="5" className="empty">Tháng này chưa có khoản AFF nào. Hãy nhập khoản đầu tiên ở phía trên.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="modal-foot">
+          <button className="ctl ghost" onClick={onClose}>ĐÓNG</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ExtraExpenseModal({
+  entries,
+  range,
+  rangeLabel,
+  today,
+  readOnly,
+  onAdd,
+  onUpdate,
+  onDelete,
+  onClose,
+}) {
+  const bounds = dashboardRangeBounds(range, dashDateOnly(today));
+  const monthStart = dashDateIso(bounds.start);
+  const monthEnd = dashDateIso(bounds.end);
+  const emptyForm = () => ({
+    amount: '',
+    spentAt: defaultAffiliateDate(range, today),
+    note: '',
+  });
+  const [form, setForm] = useStateD(emptyForm);
+  const [editingId, setEditingId] = useStateD(null);
+  const total = entries.reduce((sum, entry) => sum + (+entry.amount || 0), 0);
+  const orderedEntries = entries
+    .slice()
+    .sort((a, b) => new Date(b.spentAt) - new Date(a.spentAt));
+  const valid = +form.amount > 0 && form.spentAt;
+
+  const resetForm = () => {
+    setEditingId(null);
+    setForm(emptyForm());
+  };
+  const save = () => {
+    if (!valid || readOnly) return;
+    const payload = {
+      amount: +form.amount,
+      spentAt: form.spentAt,
+      note: form.note,
+    };
+    if (editingId) onUpdate(editingId, payload);
+    else onAdd(payload);
+    resetForm();
+  };
+
+  return (
+    <div className="modal-bg" onClick={onClose}>
+      <div className="modal affiliate-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-head">
+          <div>
+            <div className="modal-title"><span className="accent"></span>CHI PHÍ PHỤ</div>
+            <div className="card-sub">{rangeLabel} · trừ thẳng vào lợi nhuận cuối tháng</div>
+          </div>
+          <button className="close-x" onClick={onClose}>x</button>
+        </div>
+        <div className="modal-body">
+          <div className="affiliate-summary">
+            <div>
+              <span>Tổng chi phí tháng</span>
+              <strong className="mono">{entries.length > 0 ? `${window.fmtK(total)}đ` : '—'}</strong>
+            </div>
+            <div>
+              <span>Số khoản</span>
+              <strong className="mono">{entries.length}</strong>
+            </div>
+            <div>
+              <span>Từ ngày</span>
+              <strong className="mono">{new Date(bounds.start).toLocaleDateString('vi-VN')}</strong>
+            </div>
+          </div>
+
+          <div className="field-row three">
+            <div className="field">
+              <label>Số tiền (nghìn)</label>
+              <input
+                type="number"
+                min="0"
+                value={form.amount}
+                onChange={e => setForm(prev => ({ ...prev, amount: e.target.value }))}
+                disabled={readOnly}
+                placeholder="vd. 80"
+              />
+            </div>
+            <div className="field">
+              <label>Ngày chi</label>
+              <input
+                type="date"
+                value={form.spentAt}
+                min={monthStart}
+                max={monthEnd}
+                onChange={e => setForm(prev => ({ ...prev, spentAt: e.target.value }))}
+                disabled={readOnly}
+              />
+            </div>
+            <div className="field affiliate-save-field">
+              <label>&nbsp;</label>
+              <div className="row-actions">
+                {editingId && <button className="ctl ghost" onClick={resetForm}>HUỶ SỬA</button>}
+                <button className="ctl primary" onClick={save} disabled={!valid || readOnly}>
+                  {editingId ? 'LƯU CHI PHÍ' : '+ THÊM CHI PHÍ'}
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="field">
+            <label>Ghi chú</label>
+            <textarea
+              value={form.note}
+              onChange={e => setForm(prev => ({ ...prev, note: e.target.value }))}
+              disabled={readOnly}
+              placeholder="vd. túi bóng, băng dính, tem nhãn..."
+            />
+          </div>
+
+          <div className="tbl-wrap affiliate-table-wrap">
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th>Ngày chi</th>
+                  <th className="num">Số tiền</th>
+                  <th>Ghi chú</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {orderedEntries.map(entry => (
+                  <tr key={entry.id}>
+                    <td className="mono">{new Date(entry.spentAt).toLocaleDateString('vi-VN')}</td>
+                    <td className="num mono profit-neg">-{(+entry.amount || 0).toLocaleString('vi-VN')}</td>
+                    <td>{entry.note || 'â€”'}</td>
+                    <td>
+                      <div className="row-actions">
+                        <button
+                          className="ctl ghost sm"
+                          disabled={readOnly}
+                          onClick={() => {
+                            setEditingId(entry.id);
+                            setForm({
+                              amount: entry.amount,
+                              spentAt: entry.spentAt,
+                              note: entry.note || '',
+                            });
+                          }}
+                        >
+                          SỬA
+                        </button>
+                        <button
+                          className="ctl danger sm"
+                          disabled={readOnly}
+                          onClick={() => {
+                            if (confirm('Xoá khoản chi phí này?')) onDelete(entry.id);
+                          }}
+                        >
+                          XOÁ
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {orderedEntries.length === 0 && (
+                  <tr><td colSpan="4" className="empty">Tháng này chưa có chi phí phụ nào.</td></tr>
                 )}
               </tbody>
             </table>

@@ -22,15 +22,38 @@
     if (!(start instanceof Date) || !(end instanceof Date)) return "";
     return Math.max(0, Math.floor((end - start) / 864e5));
   }
+  function exportCodeDatePart(dateValue) {
+    const d = dateValue ? new Date(dateValue) : /* @__PURE__ */ new Date();
+    const safe = Number.isNaN(d.getTime()) ? /* @__PURE__ */ new Date() : d;
+    return `${safe.getFullYear()}${String(safe.getMonth() + 1).padStart(2, "0")}${String(safe.getDate()).padStart(2, "0")}`;
+  }
+  function exportNextTransactionCode(existingCodes, dateValue) {
+    const prefix = `NG-${exportCodeDatePart(dateValue)}-`;
+    const maxSeq = [...existingCodes].reduce((max, code) => {
+      if (!String(code || "").startsWith(prefix)) return max;
+      const seq = Number(String(code).slice(prefix.length));
+      return Number.isFinite(seq) ? Math.max(max, seq) : max;
+    }, 0);
+    return `${prefix}${String(maxSeq + 1).padStart(4, "0")}`;
+  }
+  function exportEnsureTransactionCodes(rows) {
+    const usedCodes = /* @__PURE__ */ new Set();
+    return (rows || []).map((unit) => {
+      const current = unit.transactionCode;
+      const transactionCode = current && !usedCodes.has(current) ? current : exportNextTransactionCode(usedCodes, unit.arrived);
+      usedCodes.add(transactionCode);
+      return { ...unit, transactionCode };
+    });
+  }
   function normalizeUnitsForExport(units, today) {
-    return window.ensureTransactionCodes(units).map((unit) => {
+    return exportEnsureTransactionCodes(units).map((unit) => {
       const buy = exportSafeNumber(unit.buy);
       const expectedSell = exportSafeNumber(unit.expectedSell, buy);
-      const status = unit.status === "sold" ? "sold" : "in_stock";
+      const status = unit.status === "sold" ? "sold" : unit.status === "returned" ? "returned" : "in_stock";
       const arrived = exportSafeIsoDate(unit.arrived);
       const sell = status === "sold" ? exportSafeNumber(unit.sell, expectedSell || buy) : null;
       const sold = status === "sold" ? exportSafeIsoDate(unit.sold || unit.arrived) : "";
-      const profit = status === "sold" ? sell - buy : expectedSell - buy;
+      const profit = status === "sold" ? sell - buy : status === "returned" ? 0 : expectedSell - buy;
       return {
         ...unit,
         status,
@@ -40,7 +63,7 @@
         arrived,
         sold,
         profit,
-        ratio: buy > 0 ? (status === "sold" ? sell : expectedSell) / buy : null,
+        ratio: buy > 0 ? status === "returned" ? null : (status === "sold" ? sell : expectedSell) / buy : null,
         categoryName: exportCategoryName(unit.cat),
         daysInStock: status === "in_stock" ? exportDaysInStock(arrived, today) : ""
       };
@@ -245,14 +268,38 @@
     applyNumberFormat(sheet, [3, footerRow], [1, 7], "0.0%");
     return sheet;
   }
+  function buildReturnedExportSheet(returnedRows, today) {
+    const rows = returnedRows.slice().sort((a, b) => new Date(b.arrived) - new Date(a.arrived));
+    return XLSX.utils.aoa_to_sheet([
+      ["H\xC0NG HO\xC0N"],
+      [`Xu\u1EA5t l\xFAc ${(/* @__PURE__ */ new Date()).toLocaleString("vi-VN")} \xB7 danh s\xE1ch tham chi\u1EBFu, kh\xF4ng c\u1ED9ng v\xE0o th\u1ED1ng k\xEA ti\u1EC1n`],
+      ["Ng\xE0y d\u1EEF li\u1EC7u", exportDateCell(today)],
+      [],
+      ["M\xE3 giao d\u1ECBch", "D\xF2ng s\u1EA3n ph\u1EA9m", "Ph\xE2n lo\u1EA1i", "Danh m\u1EE5c", "Gi\xE1 mua tham chi\u1EBFu (ngh\xECn VND)", "Gi\xE1 b\xE1n d\u1EF1 ki\u1EBFn tham chi\u1EBFu", "Ng\xE0y nh\u1EADp", "Ghi ch\xFA"],
+      ...rows.map((unit) => [
+        unit.transactionCode,
+        unit.name || "",
+        unit.variant || "",
+        unit.categoryName,
+        unit.buy,
+        unit.expectedSell,
+        exportDateCell(unit.arrived),
+        unit.note || ""
+      ])
+    ]);
+  }
   function buildSalesWorkbook(units, today) {
     const normalized = normalizeUnitsForExport(units, today);
     const inStock = normalized.filter((unit) => unit.status === "in_stock");
     const sold = normalized.filter((unit) => unit.status === "sold");
+    const returned = normalized.filter((unit) => unit.status === "returned");
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, buildInventoryExportSheet(inStock, today), "Kho_hang");
     XLSX.utils.book_append_sheet(workbook, buildSoldExportSheet(sold, today), "Don_da_ban");
-    return { workbook, inStock, sold };
+    if (returned.length > 0) {
+      XLSX.utils.book_append_sheet(workbook, buildReturnedExportSheet(returned, today), "Hang_hoan");
+    }
+    return { workbook, inStock, sold, returned };
   }
   async function exportSalesWorkbook(units, today) {
     if (!window.XLSX) {
@@ -303,6 +350,7 @@
     ExportDataButton,
     buildSalesWorkbook,
     exportSalesWorkbook,
+    exportEnsureTransactionCodes,
     normalizeUnitsForExport
   });
 })();

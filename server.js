@@ -10,10 +10,21 @@ const { URL } = require('url');
 const ROOT = __dirname;
 const PORT = Number(process.env.PORT || 4173);
 const DB_FILE = path.join(ROOT, 'shared-database.json');
+const CONFIG_FILE = path.join(ROOT, 'site-config.js');
 const LOCK_TTL_MS = 45_000;
 
 let database = loadDatabase();
 let editLock = null;
+
+function webEditAllowed() {
+  try {
+    if (!fs.existsSync(CONFIG_FILE)) return false;
+    const configSource = fs.readFileSync(CONFIG_FILE, 'utf8');
+    return /allowWebEdit\s*:\s*true\b/.test(configSource);
+  } catch {
+    return false;
+  }
+}
 
 function loadDatabase() {
   try {
@@ -32,6 +43,7 @@ function normalizeState(state) {
     productLines: Array.isArray(state?.productLines) ? state.productLines : [],
     categories: Array.isArray(state?.categories) ? state.categories : [],
     affiliateIncomes: Array.isArray(state?.affiliateIncomes) ? state.affiliateIncomes : [],
+    extraExpenses: Array.isArray(state?.extraExpenses) ? state.extraExpenses : [],
     dashboardSettings: {
       includePendingAffiliateInProfit: Boolean(state?.dashboardSettings?.includePendingAffiliateInProfit),
     },
@@ -141,6 +153,10 @@ async function handleApi(req, res, pathname) {
   }
 
   if (req.method === 'POST' && pathname === '/api/bootstrap') {
+    if (!webEditAllowed()) {
+      json(res, 403, { error: 'web editing is disabled', ...statePayload() });
+      return true;
+    }
     const body = await readJson(req);
     expireLockIfNeeded();
     if (!editLock || editLock.ownerId !== body.clientId) {
@@ -162,6 +178,10 @@ async function handleApi(req, res, pathname) {
   }
 
   if (req.method === 'POST' && pathname === '/api/lock/acquire') {
+    if (!webEditAllowed()) {
+      json(res, 403, { granted: false, error: 'web editing is disabled', lock: publicLock() });
+      return true;
+    }
     const body = await readJson(req);
     const clientId = String(body.clientId || '').trim();
     if (!clientId) {
@@ -205,6 +225,10 @@ async function handleApi(req, res, pathname) {
   }
 
   if (req.method === 'PUT' && pathname === '/api/state') {
+    if (!webEditAllowed()) {
+      json(res, 403, { error: 'web editing is disabled', ...statePayload() });
+      return true;
+    }
     const body = await readJson(req);
     expireLockIfNeeded();
     if (!editLock || editLock.ownerId !== body.clientId) {

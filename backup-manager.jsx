@@ -5,10 +5,12 @@ const { useState: useStateBM } = React;
 function summarizeUnits(units) {
   const inStock = units.filter(u => u.status === 'in_stock');
   const sold = units.filter(u => u.status === 'sold');
+  const returned = units.filter(u => u.status === 'returned');
   return {
     total: units.length,
     inStock: inStock.length,
     sold: sold.length,
+    returned: returned.length,
     stockValue: inStock.reduce((sum, u) => sum + (+u.buy || 0), 0),
     revenue: sold.reduce((sum, u) => sum + (+u.sell || 0), 0),
   };

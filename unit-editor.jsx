@@ -292,6 +292,7 @@ function EditUnitModal({
               <select value={form.status} onChange={e => set('status', e.target.value)}>
                 <option value="in_stock">Tồn kho</option>
                 <option value="sold">Đã bán</option>
+                <option value="returned">Hàng hoàn</option>
               </select>
             </div>
             <div className="field">
@@ -336,7 +337,7 @@ function EditUnitModal({
             </div>
             <div className="row">
               <span className="lbl">Sau khi lưu</span>
-              <span style={{ fontWeight: 700 }}>{isSold ? 'Hiện ở Tổng quan' : 'Hiện ở Kho hàng'}</span>
+              <span style={{ fontWeight: 700 }}>{isSold ? 'Hiện ở Tổng quan' : form.status === 'returned' ? 'Lưu ở Kho hàng nhưng không tính tiền' : 'Hiện ở Kho hàng'}</span>
             </div>
           </div>
         </div>

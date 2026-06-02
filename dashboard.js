@@ -36,8 +36,7 @@
       return { start: dashAddDays(end2, -6), end: end2, days: 7 };
     }
     const start = new Date(range.year, range.month, 1);
-    const rawEnd = new Date(range.year, range.month + 1, 0);
-    const end = rawEnd > todayD ? dashDateOnly(todayD) : rawEnd;
+    const end = new Date(range.year, range.month + 1, 0);
     return { start, end, days: Math.max(1, Math.floor((end - start) / 864e5) + 1) };
   }
   function dashboardRangeLabel(range, todayD) {
@@ -50,6 +49,7 @@
     units,
     sold,
     affiliateIncomes,
+    extraExpenses,
     includePendingAffiliateInProfit,
     catalogLines,
     today,
@@ -63,6 +63,9 @@
     onAddAffiliateIncome,
     onUpdateAffiliateIncome,
     onRemoveAffiliateIncome,
+    onAddExtraExpense,
+    onUpdateExtraExpense,
+    onRemoveExtraExpense,
     onSetIncludePendingAffiliateInProfit,
     readOnly = false
   }) {
@@ -72,11 +75,13 @@
       year: todayD.getFullYear(),
       month: todayD.getMonth()
     }));
+    const [search, setSearch] = useStateD("");
     const [catFilter, setCatFilter] = useStateD("all");
     const [confirmCancel, setConfirmCancel] = useStateD(null);
     const [editingUnit, setEditingUnit] = useStateD(null);
     const [showAnalytics, setShowAnalytics] = useStateD(false);
     const [showAffiliateModal, setShowAffiliateModal] = useStateD(false);
+    const [showExpenseModal, setShowExpenseModal] = useStateD(false);
     const [detailedMode, setDetailedMode] = useStateD(false);
     const fmtAmount = (n, detailed = detailedMode) => {
       if (n === 0) return "0";
@@ -102,9 +107,11 @@
       return sold.filter((s) => {
         const d = new Date(s.sold);
         const inCat = catFilter === "all" || s.cat === catFilter;
-        return inPeriod(d, range) && inCat;
+        const q = search.trim().toLowerCase();
+        const matchSearch = !q || (s.transactionCode || "").toLowerCase().includes(q) || (s.name || "").toLowerCase().includes(q) || (s.variant || "").toLowerCase().includes(q) || (s.note || "").toLowerCase().includes(q);
+        return inPeriod(d, range) && inCat && matchSearch;
       });
-    }, [sold, range, catFilter]);
+    }, [sold, range, catFilter, search]);
     const periodAffiliateEntries = useMemoD(() => {
       return (affiliateIncomes || []).filter((entry) => inPeriod(new Date(entry.receivedAt), range));
     }, [affiliateIncomes, range]);
@@ -114,23 +121,32 @@
     const pendingAffiliateIncome = pendingAffiliateEntries.reduce((sum, entry) => sum + (+entry.amount || 0), 0);
     const totalAffiliateIncome = paidAffiliateIncome + pendingAffiliateIncome;
     const affiliateIncomeUsedInProfit = paidAffiliateIncome + (includePendingAffiliateInProfit ? pendingAffiliateIncome : 0);
+    const periodExtraExpenses = useMemoD(() => {
+      return (extraExpenses || []).filter((entry) => inPeriod(new Date(entry.spentAt), range));
+    }, [extraExpenses, range]);
+    const totalExtraExpense = periodExtraExpenses.reduce((sum, entry) => sum + (+entry.amount || 0), 0);
     const includeAffiliateInProfit = catFilter === "all";
     const totalRev = filtered.reduce((s, x) => s + x.sell, 0);
     const totalBuy = filtered.reduce((s, x) => s + x.buy, 0);
     const salesProfit = totalRev - totalBuy;
-    const totalProfit = salesProfit + (includeAffiliateInProfit ? affiliateIncomeUsedInProfit : 0);
-    const profitLabel = !includeAffiliateInProfit ? "L\u1EE3i nhu\u1EADn b\xE1n h\xE0ng" : includePendingAffiliateInProfit && pendingAffiliateIncome > 0 ? "L\u1EE3i nhu\u1EADn d\u1EF1 ki\u1EBFn sau AFF" : pendingAffiliateIncome > 0 ? "L\u1EE3i nhu\u1EADn sau AFF \u0111\xE3 tr\u1EA3" : "L\u1EE3i nhu\u1EADn sau AFF";
+    const monthlyAdjustmentProfit = includeAffiliateInProfit ? affiliateIncomeUsedInProfit - totalExtraExpense : 0;
+    const totalProfit = salesProfit + monthlyAdjustmentProfit;
+    const affiliateIncomeUsedInRatio = includeAffiliateInProfit ? affiliateIncomeUsedInProfit : 0;
+    const ratioIncludesAffiliate = affiliateIncomeUsedInRatio > 0;
+    const affiliateAdjustedRevenue = totalRev + affiliateIncomeUsedInRatio;
+    const profitLabel = !includeAffiliateInProfit ? "L\u1EE3i nhu\u1EADn b\xE1n h\xE0ng" : totalExtraExpense > 0 ? "L\u1EE3i nhu\u1EADn cu\u1ED1i sau chi ph\xED" : includePendingAffiliateInProfit && pendingAffiliateIncome > 0 ? "L\u1EE3i nhu\u1EADn d\u1EF1 ki\u1EBFn sau AFF" : pendingAffiliateIncome > 0 ? "L\u1EE3i nhu\u1EADn sau AFF" : "L\u1EE3i nhu\u1EADn sau AFF";
     const itemsSold = filtered.length;
     const lossCount = filtered.filter((x) => x.sell < x.buy).length;
-    const avgRatio = totalBuy > 0 ? totalRev / totalBuy * 100 : 0;
-    const periodEndDate = rangeBounds.end;
+    const salesAvgRatio = totalBuy > 0 ? totalRev / totalBuy * 100 : 0;
+    const avgRatio = totalBuy > 0 ? affiliateAdjustedRevenue / totalBuy * 100 : 0;
     const inventoryValueAt = (date) => units.filter((u) => {
       const arrived = new Date(u.arrived);
       const soldDate = u.sold ? new Date(u.sold) : null;
       const inCat = catFilter === "all" || u.cat === catFilter;
-      return inCat && arrived <= date && (!soldDate || soldDate > date);
+      return inCat && u.status !== "returned" && arrived <= date && (!soldDate || soldDate > date);
     }).reduce((sum, u) => sum + u.buy, 0);
-    const currentInventoryValue = inventoryValueAt(periodEndDate);
+    const currentInventory = useMemoD(() => units.filter((u) => u.status === "in_stock" && (catFilter === "all" || u.cat === catFilter)), [units, catFilter]);
+    const currentInventoryValue = currentInventory.reduce((sum, unit) => sum + (+unit.buy || 0), 0);
     const prevDelta = useMemoD(() => {
       const currentStart = rangeBounds.start;
       const currentEnd = rangeBounds.end;
@@ -146,24 +162,25 @@
       });
       const pRev = prev.reduce((s, x) => s + x.sell, 0);
       const pSalesProfit = prev.reduce((s, x) => s + (x.sell - x.buy), 0);
-      const pAffiliateIncome = (affiliateIncomes || []).filter((entry) => {
-        const includedByStatus = entry.status !== "pending" || includePendingAffiliateInProfit;
-        return inPrevRange(entry.receivedAt) && includedByStatus;
-      }).reduce((sum, entry) => sum + (+entry.amount || 0), 0);
-      const pProfit = pSalesProfit + (includeAffiliateInProfit ? pAffiliateIncome : 0);
+      const prevAffiliateEntries = (affiliateIncomes || []).filter((entry) => inPrevRange(entry.receivedAt));
+      const prevPaidAffiliateIncome = prevAffiliateEntries.filter((entry) => entry.status !== "pending").reduce((sum, entry) => sum + (+entry.amount || 0), 0);
+      const prevPendingAffiliateIncome = prevAffiliateEntries.filter((entry) => entry.status === "pending").reduce((sum, entry) => sum + (+entry.amount || 0), 0);
+      const prevAffiliateIncomeUsed = prevPaidAffiliateIncome + (includePendingAffiliateInProfit ? prevPendingAffiliateIncome : 0);
+      const prevExtraExpense = (extraExpenses || []).filter((entry) => inPrevRange(entry.spentAt)).reduce((sum, entry) => sum + (+entry.amount || 0), 0);
+      const pTotalProfit = pSalesProfit + (catFilter === "all" ? prevAffiliateIncomeUsed - prevExtraExpense : 0);
       const prevInventoryValue = inventoryValueAt(prevEnd);
       return {
         rev: pRev !== 0 ? (totalRev - pRev) / Math.abs(pRev) * 100 : null,
-        profit: pProfit !== 0 ? (totalProfit - pProfit) / Math.abs(pProfit) * 100 : null,
+        profit: pTotalProfit !== 0 ? (totalProfit - pTotalProfit) / Math.abs(pTotalProfit) * 100 : null,
         items: prev.length ? (itemsSold - prev.length) / prev.length * 100 : null,
         inventory: prevInventoryValue !== 0 ? (currentInventoryValue - prevInventoryValue) / Math.abs(prevInventoryValue) * 100 : null
       };
-    }, [sold, rangeBounds, catFilter, totalRev, totalProfit, itemsSold, currentInventoryValue, units, affiliateIncomes, includeAffiliateInProfit, includePendingAffiliateInProfit]);
+    }, [sold, affiliateIncomes, extraExpenses, rangeBounds, catFilter, totalRev, totalProfit, itemsSold, currentInventoryValue, units, includePendingAffiliateInProfit]);
     const lineData = useMemoD(() => {
       const buckets = [];
       for (let i = 0; i < rangeBounds.days; i++) {
         const d = dashAddDays(rangeBounds.start, i);
-        buckets.push({ date: d, rev: 0, salesProfit: 0, affiliate: 0, profit: 0, inventory: inventoryValueAt(d) });
+        buckets.push({ date: d, rev: 0, salesProfit: 0, profit: 0, inventory: inventoryValueAt(d) });
       }
       filtered.forEach((s) => {
         const sd = dashDateOnly(s.sold);
@@ -173,25 +190,17 @@
           buckets[idx].salesProfit += s.sell - s.buy;
         }
       });
-      if (includeAffiliateInProfit) {
-        periodAffiliateEntries.filter((entry) => entry.status !== "pending" || includePendingAffiliateInProfit).forEach((entry) => {
-          const receivedAt = dashDateOnly(entry.receivedAt);
-          const idx = buckets.findIndex((b) => b.date.getTime() === receivedAt.getTime());
-          if (idx >= 0) buckets[idx].affiliate += +entry.amount || 0;
-        });
-      }
       buckets.forEach((bucket) => {
-        bucket.profit = bucket.salesProfit + bucket.affiliate;
+        bucket.profit = bucket.salesProfit;
       });
       return {
         days: buckets.map((b) => `${b.date.getDate()}/${b.date.getMonth() + 1}`),
         rev: buckets.map((b) => b.rev),
         salesProfit: buckets.map((b) => b.salesProfit),
-        affiliate: buckets.map((b) => b.affiliate),
         profit: buckets.map((b) => b.profit),
         inventory: buckets.map((b) => b.inventory)
       };
-    }, [filtered, rangeBounds, units, catFilter, periodAffiliateEntries, includeAffiliateInProfit, includePendingAffiliateInProfit]);
+    }, [filtered, rangeBounds, units, catFilter]);
     const profitByCat = useMemoD(() => {
       const map = {};
       filtered.forEach((s) => {
@@ -206,7 +215,7 @@
         map[s.cat].buy += s.buy;
         map[s.cat].sell += s.sell;
       });
-      return window.CATEGORIES.map((c) => ({ ...c, ratio: map[c.id] ? map[c.id].sell / map[c.id].buy * 100 : null })).filter((c) => c.ratio !== null).sort((a, b) => b.ratio - a.ratio);
+      return window.CATEGORIES.filter((c) => c.id !== "accessory").map((c) => ({ ...c, ratio: map[c.id] ? map[c.id].sell / map[c.id].buy * 100 : null })).filter((c) => c.ratio !== null).sort((a, b) => b.ratio - a.ratio);
     }, [filtered]);
     const catCounts = useMemoD(() => {
       const inPeriodSales = sold.filter((s) => inPeriod(new Date(s.sold), range));
@@ -225,7 +234,6 @@
       ...sold.map((s) => ({ date: s.sold })),
       ...(affiliateIncomes || []).map((entry) => ({ date: entry.receivedAt }))
     ], [sold, affiliateIncomes]);
-    const currentInventory = useMemoD(() => units.filter((u) => u.status === "in_stock" && (catFilter === "all" || u.cat === catFilter)), [units, catFilter]);
     const revenueByCat = useMemoD(() => {
       const map = {};
       filtered.forEach((s) => {
@@ -244,14 +252,17 @@
         map[key].revenue += s.sell;
         map[key].profit += s.sell - s.buy;
       });
-      return Object.values(map).sort((a, b) => b.revenue - a.revenue || b.qty - a.qty).slice(0, 8);
+      return Object.values(map).map((item) => ({
+        ...item,
+        avgProfit: item.qty > 0 ? Math.round(item.profit / item.qty) : 0
+      })).sort((a, b) => b.revenue - a.revenue || b.qty - a.qty).slice(0, 8);
     }, [filtered]);
     const slowInventory = useMemoD(() => currentInventory.map((u) => ({
       ...u,
       daysInStock: Math.max(0, Math.floor((todayD - new Date(u.arrived)) / 864e5))
     })).sort((a, b) => b.daysInStock - a.daysInStock || b.buy - a.buy).slice(0, 8), [currentInventory, today]);
     const recentSales = useMemoD(() => filtered.slice().sort((a, b) => new Date(b.sold) - new Date(a.sold)).slice(0, 8), [filtered]);
-    return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "page-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h1", { className: "page-title" }, /* @__PURE__ */ React.createElement("span", { className: "accent" }), "T\u1ED5ng quan kinh doanh"), /* @__PURE__ */ React.createElement("div", { className: "page-sub" }, "C\u1EADp nh\u1EADt realtime \xB7 ", todayD.toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }))), /* @__PURE__ */ React.createElement("div", { className: "page-controls" }, /* @__PURE__ */ React.createElement(ImportDataButton, { today, onImport: importUnits, disabled: readOnly }), /* @__PURE__ */ React.createElement(ExportDataButton, { units, today }), /* @__PURE__ */ React.createElement(CategoryPicker, { value: catFilter, onChange: setCatFilter, counts: catCounts, categories: visibleCategories }), /* @__PURE__ */ React.createElement(DateRangePicker, { value: range, onChange: setRange, dataPoints: timelinePoints, today }))), /* @__PURE__ */ React.createElement("div", { className: "kpi-grid" }, /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "page-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h1", { className: "page-title" }, /* @__PURE__ */ React.createElement("span", { className: "accent" }), "T\u1ED5ng quan kinh doanh"), /* @__PURE__ */ React.createElement("div", { className: "page-sub" }, "C\u1EADp nh\u1EADt realtime \xB7 ", todayD.toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }))), /* @__PURE__ */ React.createElement("div", { className: "page-controls" }, /* @__PURE__ */ React.createElement("div", { className: "search" }, /* @__PURE__ */ React.createElement("span", { className: "search-icon" }, /* @__PURE__ */ React.createElement("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" }, /* @__PURE__ */ React.createElement("circle", { cx: "11", cy: "11", r: "8" }), /* @__PURE__ */ React.createElement("path", { d: "m21 21-4.3-4.3" }))), /* @__PURE__ */ React.createElement("input", { type: "text", placeholder: "T\xECm theo m\xE3 / t\xEAn / variant...", value: search, onChange: (e) => setSearch(e.target.value) })), /* @__PURE__ */ React.createElement(ImportDataButton, { today, onImport: importUnits, disabled: readOnly }), /* @__PURE__ */ React.createElement(ExportDataButton, { units, today }), /* @__PURE__ */ React.createElement(CategoryPicker, { value: catFilter, onChange: setCatFilter, counts: catCounts, categories: visibleCategories }), /* @__PURE__ */ React.createElement(DateRangePicker, { value: range, onChange: setRange, dataPoints: timelinePoints, today }))), /* @__PURE__ */ React.createElement("div", { className: "kpi-grid" }, /* @__PURE__ */ React.createElement(
       "div",
       {
         className: "kpi kpi-money-toggle",
@@ -270,6 +281,21 @@
         title: moneyToggleTitle
       },
       /* @__PURE__ */ React.createElement("div", { className: "kpi-label" }, profitLabel),
+      /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          className: `aff-chip expense-mini-chip ${totalExtraExpense > 0 ? "pending" : "paid"}`,
+          onClick: (e) => {
+            e.stopPropagation();
+            setShowExpenseModal(true);
+          },
+          disabled: readOnly && periodExtraExpenses.length === 0,
+          title: "Qu\u1EA3n l\xFD chi ph\xED ph\u1EE5 trong th\xE1ng"
+        },
+        "Chi ph\xED ph\u1EE5 ",
+        totalExtraExpense > 0 ? `-${fmtAmount(totalExtraExpense)} ${moneyUnit}` : "+ nh\u1EADp"
+      ),
       /* @__PURE__ */ React.createElement("div", { className: `kpi-value mono ${detailedMode ? "detailed" : ""}`, style: { color: totalProfit >= 0 ? "#10b981" : "#e11d48" } }, totalProfit < 0 ? "\u2212" : "", fmtAmount(Math.abs(totalProfit)), /* @__PURE__ */ React.createElement("span", { className: "unit" }, moneyUnit)),
       /* @__PURE__ */ React.createElement("div", { className: "kpi-delta" }, prevDelta.profit !== null ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("span", { className: prevDelta.profit >= 0 ? "up" : "down" }, prevDelta.profit >= 0 ? "\u25B2" : "\u25BC", " ", Math.abs(prevDelta.profit).toFixed(1), "%"), /* @__PURE__ */ React.createElement("span", null, "so v\u1EDBi k\u1EF3 tr\u01B0\u1EDBc")) : /* @__PURE__ */ React.createElement("span", { style: { color: "var(--muted-2)" } }, "\u2014 k\u1EF3 tr\u01B0\u1EDBc ch\u01B0a c\xF3 d\u1EEF li\u1EC7u")),
       /* @__PURE__ */ React.createElement("div", { className: "kpi-spark" }, /* @__PURE__ */ React.createElement(Sparkline, { data: lineData.profit, color: "#10b981" }))
@@ -303,7 +329,7 @@
       /* @__PURE__ */ React.createElement("div", { className: `kpi-value mono ${detailedMode ? "detailed" : ""}` }, fmtAmount(currentInventoryValue), /* @__PURE__ */ React.createElement("span", { className: "unit" }, moneyUnit)),
       /* @__PURE__ */ React.createElement("div", { className: "kpi-delta" }, prevDelta.inventory !== null ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("span", { className: prevDelta.inventory >= 0 ? "up" : "down" }, prevDelta.inventory >= 0 ? "\u25B2" : "\u25BC", " ", Math.abs(prevDelta.inventory).toFixed(1), "%"), /* @__PURE__ */ React.createElement("span", null, "so v\u1EDBi cu\u1ED1i k\u1EF3 tr\u01B0\u1EDBc")) : /* @__PURE__ */ React.createElement("span", { style: { color: "var(--muted-2)" } }, "\u2014 k\u1EF3 tr\u01B0\u1EDBc ch\u01B0a c\xF3 d\u1EEF li\u1EC7u")),
       /* @__PURE__ */ React.createElement("div", { className: "kpi-spark" }, /* @__PURE__ */ React.createElement(Sparkline, { data: lineData.inventory, color: "#2563eb" }))
-    ), /* @__PURE__ */ React.createElement("div", { className: "kpi purple" }, /* @__PURE__ */ React.createElement("div", { className: "kpi-label" }, "T\u1EC9 l\u1EC7 b\xE1n / mua trung b\xECnh"), /* @__PURE__ */ React.createElement("div", { className: "kpi-gauge", style: { marginTop: 6 } }, /* @__PURE__ */ React.createElement(Gauge, { value: avgRatio, label: "b\xE1n/mua" }), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color: "#9a9aae", fontWeight: 800, letterSpacing: "0.08em" } }, !includeAffiliateInProfit ? "BI\xCAN L\u1EE2I NHU\u1EACN" : includePendingAffiliateInProfit && pendingAffiliateIncome > 0 ? "BI\xCAN L\xC3I D\u1EF0 KI\u1EBEN" : "BI\xCAN L\xC3I SAU AFF"), /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 18, fontWeight: 800, color: totalProfit >= 0 ? "#10b981" : "#e11d48", marginTop: 4 } }, totalRev > 0 ? (totalProfit / totalRev * 100).toFixed(1) : 0, "%"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: "#9a9aae", marginTop: 6, fontWeight: 600 } }, "V\u1ED1n", " ", /* @__PURE__ */ React.createElement(
+    ), /* @__PURE__ */ React.createElement("div", { className: "kpi purple" }, /* @__PURE__ */ React.createElement("div", { className: "kpi-label" }, "T\u1EC9 l\u1EC7 b\xE1n / mua trung b\xECnh"), /* @__PURE__ */ React.createElement("div", { className: "kpi-gauge", style: { marginTop: 6 } }, /* @__PURE__ */ React.createElement(Gauge, { value: avgRatio, label: ratioIncludesAffiliate ? "t\xEDnh c\u1EA3 AFF" : "b\xE1n/mua" }), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color: "#9a9aae", fontWeight: 800, letterSpacing: "0.08em" } }, !includeAffiliateInProfit ? "BI\xCAN L\u1EE2I NHU\u1EACN" : includePendingAffiliateInProfit && pendingAffiliateIncome > 0 ? "BI\xCAN L\xC3I D\u1EF0 KI\u1EBEN" : "BI\xCAN L\xC3I SAU AFF"), /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 18, fontWeight: 800, color: totalProfit >= 0 ? "#10b981" : "#e11d48", marginTop: 4 } }, totalRev > 0 ? (totalProfit / totalRev * 100).toFixed(1) : 0, "%"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: "#9a9aae", marginTop: 6, fontWeight: 600 } }, "V\u1ED1n", " ", /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
@@ -314,23 +340,24 @@
       fmtAmount(totalBuy),
       " ",
       moneyUnit
-    )))))), /* @__PURE__ */ React.createElement("div", { className: "charts-row" }, /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "card-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("button", { className: "card-title analytics-title-btn", onClick: () => setShowAnalytics(true) }, "Doanh thu & ", profitLabel), /* @__PURE__ */ React.createElement("div", { className: "card-sub" }, "Theo ng\xE0y \xB7 ", rangeLabel)), /* @__PURE__ */ React.createElement("div", { className: "legend" }, /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("i", { className: "swatch", style: { background: "#e11d48" } }), "Doanh thu"), /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("i", { className: "swatch", style: { background: "#10b981" } }), profitLabel))), /* @__PURE__ */ React.createElement("div", { className: "card-body" }, /* @__PURE__ */ React.createElement(
+    ), ratioIncludesAffiliate && /* @__PURE__ */ React.createElement("span", null, " \xB7 t\xEDnh c\u1EA3 AFF ", fmtAmount(affiliateIncomeUsedInRatio), " ", moneyUnit)))))), /* @__PURE__ */ React.createElement("div", { className: "charts-row" }, /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "card-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("button", { className: "card-title analytics-title-btn", onClick: () => setShowAnalytics(true) }, "Doanh thu & L\u1EE3i nhu\u1EADn b\xE1n h\xE0ng"), /* @__PURE__ */ React.createElement("div", { className: "card-sub" }, "Theo ng\xE0y \xB7 ", rangeLabel)), /* @__PURE__ */ React.createElement("div", { className: "legend" }, /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("i", { className: "swatch", style: { background: "#e11d48" } }), "Doanh thu"), /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("i", { className: "swatch", style: { background: "#10b981" } }), "L\u1EE3i nhu\u1EADn b\xE1n h\xE0ng"))), /* @__PURE__ */ React.createElement("div", { className: "card-body" }, /* @__PURE__ */ React.createElement(
       LineChart,
       {
         series: [
           { name: "Doanh thu", color: "#e11d48", data: lineData.rev },
-          { name: profitLabel, color: "#10b981", data: lineData.profit }
+          { name: "L\u1EE3i nhu\u1EADn b\xE1n h\xE0ng", color: "#10b981", data: lineData.profit }
         ],
         days: lineData.days
       }
-    ))), /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "card-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "card-title" }, "L\u1EE3i nhu\u1EADn b\xE1n h\xE0ng theo danh m\u1EE5c"), /* @__PURE__ */ React.createElement("div", { className: "card-sub" }, "T\xEDnh theo ph\xE2n lo\u1EA1i \xB7 ngh\xECn \u0111\u1ED3ng"))), /* @__PURE__ */ React.createElement("div", { className: "card-body", style: { paddingTop: 6 } }, profitByCat.length > 0 ? /* @__PURE__ */ React.createElement(BarChart, { data: profitByCat, height: 240 }) : /* @__PURE__ */ React.createElement("div", { className: "empty" }, "Ch\u01B0a c\xF3 giao d\u1ECBch trong k\u1EF3 n\xE0y")))), ratioByCat.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "charts-row", style: { gridTemplateColumns: "1fr" } }, /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "card-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "card-title" }, "T\u1EC9 l\u1EC7 b\xE1n/mua theo danh m\u1EE5c"), /* @__PURE__ */ React.createElement("div", { className: "card-sub" }, "So s\xE1nh hi\u1EC7u su\u1EA5t t\u1EEBng nh\xF3m s\u1EA3n ph\u1EA9m"))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: `repeat(${ratioByCat.length}, 1fr)`, gap: 1, background: "var(--border-soft)" } }, ratioByCat.map((c) => {
+    ))), /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "card-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "card-title" }, "L\u1EE3i nhu\u1EADn b\xE1n h\xE0ng theo danh m\u1EE5c"), /* @__PURE__ */ React.createElement("div", { className: "card-sub" }, "T\xEDnh theo ph\xE2n lo\u1EA1i \xB7 ngh\xECn \u0111\u1ED3ng"))), /* @__PURE__ */ React.createElement("div", { className: "card-body", style: { paddingTop: 6 } }, profitByCat.length > 0 ? /* @__PURE__ */ React.createElement(BarChart, { data: profitByCat, height: 240 }) : /* @__PURE__ */ React.createElement("div", { className: "empty" }, "Ch\u01B0a c\xF3 giao d\u1ECBch trong k\u1EF3 n\xE0y")))), ratioByCat.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "charts-row", style: { gridTemplateColumns: "1fr" } }, /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "card-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "card-title" }, "T\u1EC9 l\u1EC7 b\xE1n/mua theo danh m\u1EE5c"), /* @__PURE__ */ React.createElement("div", { className: "card-sub" }, "So s\xE1nh hi\u1EC7u su\u1EA5t t\u1EEBng nh\xF3m s\u1EA3n ph\u1EA9m"))), /* @__PURE__ */ React.createElement("div", { className: "ratio-strip", style: { display: "grid", gridTemplateColumns: `repeat(${ratioByCat.length}, 1fr)`, gap: 1, background: "var(--border-soft)" } }, ratioByCat.map((c) => {
       const color = c.ratio >= 130 ? "#10b981" : c.ratio >= 110 ? "#f59e0b" : c.ratio >= 100 ? "#ff6a3d" : "#e11d48";
       return /* @__PURE__ */ React.createElement("div", { key: c.id, style: { background: "#fff", padding: "16px 18px" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: "var(--muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" } }, /* @__PURE__ */ React.createElement("i", { style: { width: 8, height: 8, background: c.color, display: "inline-block" } }), c.name), /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 22, fontWeight: 800, marginTop: 6, color } }, c.ratio.toFixed(1), "%"));
-    })))), /* @__PURE__ */ React.createElement("div", { className: "card tbl-card" }, /* @__PURE__ */ React.createElement("div", { className: "card-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "card-title" }, "S\u1ED5 giao d\u1ECBch \u0111\xE3 b\xE1n"), /* @__PURE__ */ React.createElement("div", { className: "card-sub" }, filtered.length, " \u0111\u01A1n h\xE0ng \xB7 gi\xE1 theo ngh\xECn \u0111\u1ED3ng"))), /* @__PURE__ */ React.createElement("div", { className: "tbl-wrap" }, /* @__PURE__ */ React.createElement("table", { className: "tbl" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "M\xE3 GD"), /* @__PURE__ */ React.createElement("th", null, "S\u1EA3n ph\u1EA9m"), /* @__PURE__ */ React.createElement("th", null, "Danh m\u1EE5c"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "Gi\xE1 mua"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "Gi\xE1 b\xE1n"), /* @__PURE__ */ React.createElement("th", null, "Ng\xE0y v\u1EC1"), /* @__PURE__ */ React.createElement("th", null, "Ng\xE0y b\xE1n"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "L\u1EE3i nhu\u1EADn"), /* @__PURE__ */ React.createElement("th", null, "T\u1EC9 l\u1EC7"), /* @__PURE__ */ React.createElement("th", null, "Ghi ch\xFA"), /* @__PURE__ */ React.createElement("th", null))), /* @__PURE__ */ React.createElement("tbody", null, filtered.slice().sort((a, b) => new Date(b.sold) - new Date(a.sold)).map((s) => {
+    })))), /* @__PURE__ */ React.createElement("div", { className: "card tbl-card" }, /* @__PURE__ */ React.createElement("div", { className: "card-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "card-title" }, "S\u1ED5 giao d\u1ECBch \u0111\xE3 b\xE1n"), /* @__PURE__ */ React.createElement("div", { className: "card-sub" }, filtered.length, " \u0111\u01A1n h\xE0ng \xB7 gi\xE1 theo ngh\xECn \u0111\u1ED3ng"))), /* @__PURE__ */ React.createElement("div", { className: "tbl-wrap" }, /* @__PURE__ */ React.createElement("table", { className: "tbl sales-mobile-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "M\xE3 GD"), /* @__PURE__ */ React.createElement("th", null, "S\u1EA3n ph\u1EA9m"), /* @__PURE__ */ React.createElement("th", null, "Danh m\u1EE5c"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "Gi\xE1 mua"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "Gi\xE1 b\xE1n"), /* @__PURE__ */ React.createElement("th", null, "Ng\xE0y v\u1EC1"), /* @__PURE__ */ React.createElement("th", null, "Ng\xE0y b\xE1n"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "L\u1EE3i nhu\u1EADn"), /* @__PURE__ */ React.createElement("th", { className: "ratio-col" }, "T\u1EC9 l\u1EC7"), /* @__PURE__ */ React.createElement("th", null, "Ghi ch\xFA"), /* @__PURE__ */ React.createElement("th", null))), /* @__PURE__ */ React.createElement("tbody", null, filtered.slice().sort((a, b) => new Date(b.sold) - new Date(a.sold)).map((s) => {
       const profit = s.sell - s.buy;
       const ratio = s.sell / s.buy * 100;
+      const showRatio = s.cat !== "accessory";
       const isLoss = profit < 0;
-      return /* @__PURE__ */ React.createElement("tr", { key: s.id }, /* @__PURE__ */ React.createElement("td", { className: "mono txn-code" }, s.transactionCode), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { style: { minWidth: 200 } }, /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 700 } }, s.name), s.variant && /* @__PURE__ */ React.createElement("span", { className: "variant" }, s.variant))), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(CatPill, { cat: s.cat })), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, s.buy.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "num mono", style: { fontWeight: 700 } }, s.sell.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { color: "#6b6b80", fontSize: 12 } }, new Date(s.arrived).toLocaleDateString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { fontSize: 12, fontWeight: 600 } }, new Date(s.sold).toLocaleDateString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: `num mono ${isLoss ? "profit-neg" : profit > 0 ? "profit-pos" : "profit-zero"}` }, isLoss ? "\u2212" : profit > 0 ? "+" : "", Math.abs(profit).toLocaleString("vi-VN"), isLoss && /* @__PURE__ */ React.createElement("span", { className: "loss-tag" }, "L\u1ED6")), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(RateBar, { pct: ratio })), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(
+      return /* @__PURE__ */ React.createElement("tr", { key: s.id }, /* @__PURE__ */ React.createElement("td", { className: "mono txn-code" }, s.transactionCode), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { style: { minWidth: 200 } }, /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 700 } }, s.name), s.variant && /* @__PURE__ */ React.createElement("span", { className: "variant" }, s.variant))), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(CatPill, { cat: s.cat })), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, s.buy.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "num mono", style: { fontWeight: 700 } }, s.sell.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { color: "#6b6b80", fontSize: 12 } }, new Date(s.arrived).toLocaleDateString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { fontSize: 12, fontWeight: 600 } }, new Date(s.sold).toLocaleDateString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: `num mono ${isLoss ? "profit-neg" : profit > 0 ? "profit-pos" : "profit-zero"}` }, isLoss ? "\u2212" : profit > 0 ? "+" : "", Math.abs(profit).toLocaleString("vi-VN"), isLoss && /* @__PURE__ */ React.createElement("span", { className: "loss-tag" }, "L\u1ED6")), /* @__PURE__ */ React.createElement("td", { className: "ratio-col" }, showRatio ? /* @__PURE__ */ React.createElement(RateBar, { pct: ratio }) : /* @__PURE__ */ React.createElement("span", { className: "muted" }, "\u2014")), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(
         "textarea",
         {
           className: "note-input",
@@ -340,7 +367,7 @@
           disabled: readOnly
         }
       )), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { className: "row-actions" }, /* @__PURE__ */ React.createElement("button", { className: "ctl ghost sm", onClick: () => setEditingUnit(s), disabled: readOnly }, "S\u1EECA"), /* @__PURE__ */ React.createElement("button", { className: "ctl danger sm", onClick: () => setConfirmCancel(s), title: "Hu\u1EF7 giao d\u1ECBch, tr\u1EA3 v\u1EC1 kho", disabled: readOnly }, "\u21BA HU\u1EF6"))));
-    }), filtered.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "11", className: "empty" }, "Kh\xF4ng c\xF3 giao d\u1ECBch trong k\u1EF3 \u0111ang xem"))), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "3" }, "T\u1ED4NG (", filtered.length, " \u0111\u01A1n)"), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, totalBuy.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, totalRev.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { colSpan: "2" }), /* @__PURE__ */ React.createElement("td", { className: `num mono ${salesProfit >= 0 ? "profit-pos" : "profit-neg"}` }, salesProfit < 0 ? "\u2212" : "+", Math.abs(salesProfit).toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { color: salesProfit >= 0 ? "#10b981" : "#e11d48", fontWeight: 800 } }, avgRatio.toFixed(1), "%"), /* @__PURE__ */ React.createElement("td", { colSpan: "2" })))))), confirmCancel && /* @__PURE__ */ React.createElement(
+    }), filtered.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "11", className: "empty" }, "Kh\xF4ng c\xF3 giao d\u1ECBch trong k\u1EF3 \u0111ang xem"))), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "3" }, "T\u1ED4NG (", filtered.length, " \u0111\u01A1n)"), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, totalBuy.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, totalRev.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { colSpan: "2" }), /* @__PURE__ */ React.createElement("td", { className: `num mono ${salesProfit >= 0 ? "profit-pos" : "profit-neg"}` }, salesProfit < 0 ? "\u2212" : "+", Math.abs(salesProfit).toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { color: salesProfit >= 0 ? "#10b981" : "#e11d48", fontWeight: 800 } }, catFilter === "accessory" ? "\u2014" : `${salesAvgRatio.toFixed(1)}%`), /* @__PURE__ */ React.createElement("td", { colSpan: "2" })))))), confirmCancel && /* @__PURE__ */ React.createElement(
       ConfirmCancelModal,
       {
         unit: confirmCancel,
@@ -378,6 +405,8 @@
         paidAffiliateIncome,
         pendingAffiliateIncome,
         affiliateIncomeUsedInProfit,
+        extraExpenseEntries: periodExtraExpenses,
+        totalExtraExpense,
         includeAffiliateInProfit,
         includePendingAffiliateInProfit,
         totalBuy,
@@ -408,6 +437,19 @@
         onDelete: onRemoveAffiliateIncome,
         onClose: () => setShowAffiliateModal(false)
       }
+    ), showExpenseModal && /* @__PURE__ */ React.createElement(
+      ExtraExpenseModal,
+      {
+        entries: periodExtraExpenses,
+        range,
+        rangeLabel,
+        today,
+        readOnly,
+        onAdd: onAddExtraExpense,
+        onUpdate: onUpdateExtraExpense,
+        onDelete: onRemoveExtraExpense,
+        onClose: () => setShowExpenseModal(false)
+      }
     ));
   }
   function SalesAnalyticsModal({
@@ -421,6 +463,8 @@
     paidAffiliateIncome,
     pendingAffiliateIncome,
     affiliateIncomeUsedInProfit,
+    extraExpenseEntries,
+    totalExtraExpense,
     includeAffiliateInProfit,
     includePendingAffiliateInProfit,
     totalBuy,
@@ -456,12 +500,12 @@
         sub: `AFF t\xEDnh v\xE0o l\xE3i ${window.fmtK(affiliateIncomeUsedInProfit)}\u0111`,
         tone: "green"
       }
-    ), /* @__PURE__ */ React.createElement(AnalyticsMetric, { label: "V\u1ED1n t\u1ED3n cu\u1ED1i k\u1EF3", value: `${window.fmtK(currentInventoryValue)}\u0111`, sub: `${currentInventory.length} m\xF3n \u0111ang t\u1ED3n`, tone: "blue" })), /* @__PURE__ */ React.createElement("div", { className: "analytics-grid two" }, /* @__PURE__ */ React.createElement(AnalyticsPanel, { title: `Doanh thu & ${profitLabel.toLowerCase()} theo ng\xE0y`, subtitle: rangeLabel }, /* @__PURE__ */ React.createElement(
+    ), /* @__PURE__ */ React.createElement(AnalyticsMetric, { label: "V\u1ED1n t\u1ED3n hi\u1EC7n t\u1EA1i", value: `${window.fmtK(currentInventoryValue)}\u0111`, sub: `${currentInventory.length} m\xF3n \u0111ang t\u1ED3n`, tone: "blue" })), /* @__PURE__ */ React.createElement("div", { className: "analytics-grid two" }, /* @__PURE__ */ React.createElement(AnalyticsPanel, { title: "Doanh thu & l\u1EE3i nhu\u1EADn b\xE1n h\xE0ng theo ng\xE0y", subtitle: rangeLabel }, /* @__PURE__ */ React.createElement(
       LineChart,
       {
         series: [
           { name: "Doanh thu", color: "#e11d48", data: lineData.rev },
-          { name: profitLabel, color: "#10b981", data: lineData.profit }
+          { name: "L\u1EE3i nhu\u1EADn b\xE1n h\xE0ng", color: "#10b981", data: lineData.profit }
         ],
         days: lineData.days
       }
@@ -476,7 +520,7 @@
     ))), /* @__PURE__ */ React.createElement("div", { className: "analytics-grid two" }, /* @__PURE__ */ React.createElement(AnalyticsPanel, { title: "L\u1EE3i nhu\u1EADn b\xE1n h\xE0ng theo danh m\u1EE5c", subtitle: "Nh\xF3m n\xE0o \u0111ang t\u1EA1o ti\u1EC1n t\u1EEB \u0111\u01A1n b\xE1n" }, profitByCat.length > 0 ? /* @__PURE__ */ React.createElement(BarChart, { data: profitByCat, height: 220 }) : /* @__PURE__ */ React.createElement("div", { className: "empty" }, "Ch\u01B0a c\xF3 giao d\u1ECBch trong k\u1EF3 n\xE0y")), /* @__PURE__ */ React.createElement(AnalyticsPanel, { title: "C\u01A1 c\u1EA5u doanh thu", subtitle: "T\u1EF7 tr\u1ECDng theo danh m\u1EE5c" }, revenueByCat.length > 0 ? /* @__PURE__ */ React.createElement("div", { className: "analytics-donut-wrap" }, /* @__PURE__ */ React.createElement(Donut, { data: revenueByCat, size: 170 }), /* @__PURE__ */ React.createElement("div", { className: "analytics-legend-list" }, revenueByCat.map((item) => /* @__PURE__ */ React.createElement("div", { key: item.label }, /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("i", { style: { background: item.color } }), item.label), /* @__PURE__ */ React.createElement("strong", null, window.fmtK(item.value), "\u0111"))))) : /* @__PURE__ */ React.createElement("div", { className: "empty" }, "Ch\u01B0a c\xF3 doanh thu trong k\u1EF3 n\xE0y"))), ratioByCat.length > 0 && /* @__PURE__ */ React.createElement(AnalyticsPanel, { title: "Hi\u1EC7u su\u1EA5t b\xE1n / mua theo danh m\u1EE5c", subtitle: "Nh\xECn nhanh nh\xF3m n\xE0o c\xF3 t\u1EF7 l\u1EC7 kh\u1ECFe" }, /* @__PURE__ */ React.createElement("div", { className: "analytics-ratio-grid" }, ratioByCat.map((c) => {
       const color = c.ratio >= 130 ? "#10b981" : c.ratio >= 110 ? "#f59e0b" : c.ratio >= 100 ? "#ff6a3d" : "#e11d48";
       return /* @__PURE__ */ React.createElement("div", { key: c.id }, /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("i", { style: { background: c.color } }), c.name), /* @__PURE__ */ React.createElement("strong", { style: { color } }, c.ratio.toFixed(1), "%"));
-    }))), /* @__PURE__ */ React.createElement("div", { className: "analytics-grid tables" }, /* @__PURE__ */ React.createElement(AnalyticsPanel, { title: "Thu nh\u1EADp AFF", subtitle: "\u0110\xE3 thanh to\xE1n v\xE0 \u0111ang ch\u1EDD v\u1EC1" }, /* @__PURE__ */ React.createElement("table", { className: "tbl analytics-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "Ng\xE0y ghi nh\u1EADn"), /* @__PURE__ */ React.createElement("th", null, "Tr\u1EA1ng th\xE1i"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "S\u1ED1 ti\u1EC1n"), /* @__PURE__ */ React.createElement("th", null, "Ghi ch\xFA"))), /* @__PURE__ */ React.createElement("tbody", null, affiliateEntries.slice().sort((a, b) => new Date(b.receivedAt) - new Date(a.receivedAt)).map((entry) => /* @__PURE__ */ React.createElement("tr", { key: entry.id }, /* @__PURE__ */ React.createElement("td", { className: "mono" }, new Date(entry.receivedAt).toLocaleDateString("vi-VN")), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(AffiliateStatusPill, { status: entry.status })), /* @__PURE__ */ React.createElement("td", { className: "num mono profit-pos" }, "+", (+entry.amount || 0).toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", null, entry.note || "\u2014"))), affiliateEntries.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "4", className: "empty" }, "Th\xE1ng n\xE0y ch\u01B0a c\xF3 kho\u1EA3n AFF"))))), /* @__PURE__ */ React.createElement(AnalyticsPanel, { title: "Top s\u1EA3n ph\u1EA9m", subtitle: "Theo doanh thu th\xE1ng" }, /* @__PURE__ */ React.createElement("table", { className: "tbl analytics-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "S\u1EA3n ph\u1EA9m"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "SL"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "Doanh thu"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "L\u1EE3i nhu\u1EADn"))), /* @__PURE__ */ React.createElement("tbody", null, topProducts.map((item) => /* @__PURE__ */ React.createElement("tr", { key: item.key }, /* @__PURE__ */ React.createElement("td", null, item.name), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, item.qty), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, item.revenue.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: `num mono ${item.profit >= 0 ? "profit-pos" : "profit-neg"}` }, item.profit < 0 ? "\u2212" : "+", Math.abs(item.profit).toLocaleString("vi-VN")))), topProducts.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "4", className: "empty" }, "Ch\u01B0a c\xF3 \u0111\u01A1n b\xE1n trong k\u1EF3 n\xE0y"))))), /* @__PURE__ */ React.createElement(AnalyticsPanel, { title: "T\u1ED3n kho c\u1EA7n ch\xFA \xFD", subtitle: "M\xF3n n\u1EB1m kho l\xE2u nh\u1EA5t hi\u1EC7n t\u1EA1i" }, /* @__PURE__ */ React.createElement("table", { className: "tbl analytics-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "S\u1EA3n ph\u1EA9m"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "Ng\xE0y t\u1ED3n"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "V\u1ED1n"))), /* @__PURE__ */ React.createElement("tbody", null, slowInventory.map((item) => /* @__PURE__ */ React.createElement("tr", { key: item.id }, /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", null, item.name), item.variant && /* @__PURE__ */ React.createElement("span", { className: "variant" }, item.variant)), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, item.daysInStock), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, item.buy.toLocaleString("vi-VN")))), slowInventory.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "3", className: "empty" }, "Kho \u0111ang tr\u1ED1ng"))))), /* @__PURE__ */ React.createElement(AnalyticsPanel, { title: "Giao d\u1ECBch g\u1EA7n nh\u1EA5t", subtitle: "Trong th\xE1ng \u0111ang xem" }, /* @__PURE__ */ React.createElement("table", { className: "tbl analytics-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "M\xE3 GD"), /* @__PURE__ */ React.createElement("th", null, "S\u1EA3n ph\u1EA9m"), /* @__PURE__ */ React.createElement("th", null, "Ng\xE0y b\xE1n"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "L\xE3i"))), /* @__PURE__ */ React.createElement("tbody", null, recentSales.map((item) => {
+    }))), /* @__PURE__ */ React.createElement("div", { className: "analytics-grid tables" }, /* @__PURE__ */ React.createElement(AnalyticsPanel, { title: "Thu nh\u1EADp AFF", subtitle: "\u0110\xE3 thanh to\xE1n v\xE0 \u0111ang ch\u1EDD v\u1EC1" }, /* @__PURE__ */ React.createElement("table", { className: "tbl analytics-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "Ng\xE0y ghi nh\u1EADn"), /* @__PURE__ */ React.createElement("th", null, "Tr\u1EA1ng th\xE1i"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "S\u1ED1 ti\u1EC1n"), /* @__PURE__ */ React.createElement("th", null, "Ghi ch\xFA"))), /* @__PURE__ */ React.createElement("tbody", null, affiliateEntries.slice().sort((a, b) => new Date(b.receivedAt) - new Date(a.receivedAt)).map((entry) => /* @__PURE__ */ React.createElement("tr", { key: entry.id }, /* @__PURE__ */ React.createElement("td", { className: "mono" }, new Date(entry.receivedAt).toLocaleDateString("vi-VN")), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(AffiliateStatusPill, { status: entry.status })), /* @__PURE__ */ React.createElement("td", { className: "num mono profit-pos" }, "+", (+entry.amount || 0).toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", null, entry.note || "\u2014"))), affiliateEntries.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "4", className: "empty" }, "Th\xE1ng n\xE0y ch\u01B0a c\xF3 kho\u1EA3n AFF"))))), /* @__PURE__ */ React.createElement(AnalyticsPanel, { title: "Top s\u1EA3n ph\u1EA9m", subtitle: "Theo doanh thu th\xE1ng" }, /* @__PURE__ */ React.createElement("table", { className: "tbl analytics-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "S\u1EA3n ph\u1EA9m"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "SL"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "Doanh thu"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "L\u1EE3i nhu\u1EADn TB"))), /* @__PURE__ */ React.createElement("tbody", null, topProducts.map((item) => /* @__PURE__ */ React.createElement("tr", { key: item.key }, /* @__PURE__ */ React.createElement("td", null, item.name), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, item.qty), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, item.revenue.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: `num mono ${item.avgProfit >= 0 ? "profit-pos" : "profit-neg"}` }, item.avgProfit < 0 ? "\u2212" : "+", Math.abs(item.avgProfit).toLocaleString("vi-VN")))), topProducts.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "4", className: "empty" }, "Ch\u01B0a c\xF3 \u0111\u01A1n b\xE1n trong k\u1EF3 n\xE0y"))))), /* @__PURE__ */ React.createElement(AnalyticsPanel, { title: "T\u1ED3n kho c\u1EA7n ch\xFA \xFD", subtitle: "M\xF3n n\u1EB1m kho l\xE2u nh\u1EA5t hi\u1EC7n t\u1EA1i" }, /* @__PURE__ */ React.createElement("table", { className: "tbl analytics-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "S\u1EA3n ph\u1EA9m"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "Ng\xE0y t\u1ED3n"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "V\u1ED1n"))), /* @__PURE__ */ React.createElement("tbody", null, slowInventory.map((item) => /* @__PURE__ */ React.createElement("tr", { key: item.id }, /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", null, item.name), item.variant && /* @__PURE__ */ React.createElement("span", { className: "variant" }, item.variant)), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, item.daysInStock), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, item.buy.toLocaleString("vi-VN")))), slowInventory.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "3", className: "empty" }, "Kho \u0111ang tr\u1ED1ng"))))), /* @__PURE__ */ React.createElement(AnalyticsPanel, { title: "Giao d\u1ECBch g\u1EA7n nh\u1EA5t", subtitle: "Trong th\xE1ng \u0111ang xem" }, /* @__PURE__ */ React.createElement("table", { className: "tbl analytics-table" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "M\xE3 GD"), /* @__PURE__ */ React.createElement("th", null, "S\u1EA3n ph\u1EA9m"), /* @__PURE__ */ React.createElement("th", null, "Ng\xE0y b\xE1n"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "L\xE3i"))), /* @__PURE__ */ React.createElement("tbody", null, recentSales.map((item) => {
       const profit = item.sell - item.buy;
       return /* @__PURE__ */ React.createElement("tr", { key: item.id }, /* @__PURE__ */ React.createElement("td", { className: "mono txn-code" }, item.transactionCode), /* @__PURE__ */ React.createElement("td", null, item.name), /* @__PURE__ */ React.createElement("td", { className: "mono" }, new Date(item.sold).toLocaleDateString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: `num mono ${profit >= 0 ? "profit-pos" : "profit-neg"}` }, profit < 0 ? "\u2212" : "+", Math.abs(profit).toLocaleString("vi-VN")));
     }), recentSales.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "4", className: "empty" }, "Ch\u01B0a c\xF3 giao d\u1ECBch trong k\u1EF3 n\xE0y")))))))));
@@ -604,6 +648,100 @@
       },
       "XO\xC1"
     ))))), orderedEntries.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "5", className: "empty" }, "Th\xE1ng n\xE0y ch\u01B0a c\xF3 kho\u1EA3n AFF n\xE0o. H\xE3y nh\u1EADp kho\u1EA3n \u0111\u1EA7u ti\xEAn \u1EDF ph\xEDa tr\xEAn.")))))), /* @__PURE__ */ React.createElement("div", { className: "modal-foot" }, /* @__PURE__ */ React.createElement("button", { className: "ctl ghost", onClick: onClose }, "\u0110\xD3NG"))));
+  }
+  function ExtraExpenseModal({
+    entries,
+    range,
+    rangeLabel,
+    today,
+    readOnly,
+    onAdd,
+    onUpdate,
+    onDelete,
+    onClose
+  }) {
+    const bounds = dashboardRangeBounds(range, dashDateOnly(today));
+    const monthStart = dashDateIso(bounds.start);
+    const monthEnd = dashDateIso(bounds.end);
+    const emptyForm = () => ({
+      amount: "",
+      spentAt: defaultAffiliateDate(range, today),
+      note: ""
+    });
+    const [form, setForm] = useStateD(emptyForm);
+    const [editingId, setEditingId] = useStateD(null);
+    const total = entries.reduce((sum, entry) => sum + (+entry.amount || 0), 0);
+    const orderedEntries = entries.slice().sort((a, b) => new Date(b.spentAt) - new Date(a.spentAt));
+    const valid = +form.amount > 0 && form.spentAt;
+    const resetForm = () => {
+      setEditingId(null);
+      setForm(emptyForm());
+    };
+    const save = () => {
+      if (!valid || readOnly) return;
+      const payload = {
+        amount: +form.amount,
+        spentAt: form.spentAt,
+        note: form.note
+      };
+      if (editingId) onUpdate(editingId, payload);
+      else onAdd(payload);
+      resetForm();
+    };
+    return /* @__PURE__ */ React.createElement("div", { className: "modal-bg", onClick: onClose }, /* @__PURE__ */ React.createElement("div", { className: "modal affiliate-modal", onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ React.createElement("div", { className: "modal-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "modal-title" }, /* @__PURE__ */ React.createElement("span", { className: "accent" }), "CHI PH\xCD PH\u1EE4"), /* @__PURE__ */ React.createElement("div", { className: "card-sub" }, rangeLabel, " \xB7 tr\u1EEB th\u1EB3ng v\xE0o l\u1EE3i nhu\u1EADn cu\u1ED1i th\xE1ng")), /* @__PURE__ */ React.createElement("button", { className: "close-x", onClick: onClose }, "x")), /* @__PURE__ */ React.createElement("div", { className: "modal-body" }, /* @__PURE__ */ React.createElement("div", { className: "affiliate-summary" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", null, "T\u1ED5ng chi ph\xED th\xE1ng"), /* @__PURE__ */ React.createElement("strong", { className: "mono" }, entries.length > 0 ? `${window.fmtK(total)}\u0111` : "\u2014")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", null, "S\u1ED1 kho\u1EA3n"), /* @__PURE__ */ React.createElement("strong", { className: "mono" }, entries.length)), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", null, "T\u1EEB ng\xE0y"), /* @__PURE__ */ React.createElement("strong", { className: "mono" }, new Date(bounds.start).toLocaleDateString("vi-VN")))), /* @__PURE__ */ React.createElement("div", { className: "field-row three" }, /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement("label", null, "S\u1ED1 ti\u1EC1n (ngh\xECn)"), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "number",
+        min: "0",
+        value: form.amount,
+        onChange: (e) => setForm((prev) => ({ ...prev, amount: e.target.value })),
+        disabled: readOnly,
+        placeholder: "vd. 80"
+      }
+    )), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement("label", null, "Ng\xE0y chi"), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "date",
+        value: form.spentAt,
+        min: monthStart,
+        max: monthEnd,
+        onChange: (e) => setForm((prev) => ({ ...prev, spentAt: e.target.value })),
+        disabled: readOnly
+      }
+    )), /* @__PURE__ */ React.createElement("div", { className: "field affiliate-save-field" }, /* @__PURE__ */ React.createElement("label", null, "\xA0"), /* @__PURE__ */ React.createElement("div", { className: "row-actions" }, editingId && /* @__PURE__ */ React.createElement("button", { className: "ctl ghost", onClick: resetForm }, "HU\u1EF6 S\u1EECA"), /* @__PURE__ */ React.createElement("button", { className: "ctl primary", onClick: save, disabled: !valid || readOnly }, editingId ? "L\u01AFU CHI PH\xCD" : "+ TH\xCAM CHI PH\xCD")))), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement("label", null, "Ghi ch\xFA"), /* @__PURE__ */ React.createElement(
+      "textarea",
+      {
+        value: form.note,
+        onChange: (e) => setForm((prev) => ({ ...prev, note: e.target.value })),
+        disabled: readOnly,
+        placeholder: "vd. t\xFAi b\xF3ng, b\u0103ng d\xEDnh, tem nh\xE3n..."
+      }
+    )), /* @__PURE__ */ React.createElement("div", { className: "tbl-wrap affiliate-table-wrap" }, /* @__PURE__ */ React.createElement("table", { className: "tbl" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", null, "Ng\xE0y chi"), /* @__PURE__ */ React.createElement("th", { className: "num" }, "S\u1ED1 ti\u1EC1n"), /* @__PURE__ */ React.createElement("th", null, "Ghi ch\xFA"), /* @__PURE__ */ React.createElement("th", null))), /* @__PURE__ */ React.createElement("tbody", null, orderedEntries.map((entry) => /* @__PURE__ */ React.createElement("tr", { key: entry.id }, /* @__PURE__ */ React.createElement("td", { className: "mono" }, new Date(entry.spentAt).toLocaleDateString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "num mono profit-neg" }, "-", (+entry.amount || 0).toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", null, entry.note || "\xE2\u20AC\u201D"), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { className: "row-actions" }, /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        className: "ctl ghost sm",
+        disabled: readOnly,
+        onClick: () => {
+          setEditingId(entry.id);
+          setForm({
+            amount: entry.amount,
+            spentAt: entry.spentAt,
+            note: entry.note || ""
+          });
+        }
+      },
+      "S\u1EECA"
+    ), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        className: "ctl danger sm",
+        disabled: readOnly,
+        onClick: () => {
+          if (confirm("Xo\xE1 kho\u1EA3n chi ph\xED n\xE0y?")) onDelete(entry.id);
+        }
+      },
+      "XO\xC1"
+    ))))), orderedEntries.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "4", className: "empty" }, "Th\xE1ng n\xE0y ch\u01B0a c\xF3 chi ph\xED ph\u1EE5 n\xE0o.")))))), /* @__PURE__ */ React.createElement("div", { className: "modal-foot" }, /* @__PURE__ */ React.createElement("button", { className: "ctl ghost", onClick: onClose }, "\u0110\xD3NG"))));
   }
   function ConfirmCancelModal({ unit, onClose, onConfirm }) {
     const profit = unit.sell - unit.buy;

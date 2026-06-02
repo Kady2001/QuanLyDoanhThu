@@ -8,7 +8,7 @@ const IMPORT_SCHEMA = [
   { key: 'variant', label: 'variant', required: false, note: 'Phiên bản / màu sắc' },
   { key: 'buy', label: 'gia_mua', required: true, note: 'Đơn vị nghìn đồng' },
   { key: 'expectedSell', label: 'gia_ban_du_kien', required: false, note: 'Thiếu sẽ lấy bằng giá mua' },
-  { key: 'status', label: 'trang_thai', required: false, note: 'in_stock hoặc sold; thiếu sẽ suy luận' },
+  { key: 'status', label: 'trang_thai', required: false, note: 'in_stock, sold hoặc returned; thiếu sẽ suy luận' },
   { key: 'arrived', label: 'ngay_nhap', required: false, note: 'YYYY-MM-DD hoặc DD/MM/YYYY; thiếu = ngày upload' },
   { key: 'sell', label: 'gia_ban_thuc_te', required: false, note: 'Chỉ dùng cho hàng đã bán' },
   { key: 'sold', label: 'ngay_ban', required: false, note: 'Thiếu ở dòng sold = ngày upload' },
@@ -33,6 +33,7 @@ const HEADER_ALIASES = {
 const STATUS_ALIASES = {
   in_stock: ['in_stock', 'in stock', 'ton_kho', 'ton kho', 'con_hang', 'con hang', 'available', 'stock'],
   sold: ['sold', 'da_ban', 'da ban', 'ban_roi', 'ban roi', 'completed'],
+  returned: ['returned', 'return', 'hang_hoan', 'hang hoan', 'hoan_hang', 'hoan hang', 'tra_hang', 'tra hang'],
 };
 
 function categoryAliasMap() {
@@ -256,7 +257,7 @@ function downloadImportTemplate(today) {
     ['variant', 'Không', 'Text', 'Để trống', 'Đỏ FR4'],
     ['gia_mua', 'Có', 'Số, đơn vị nghìn đồng', 'Không cho nhập; dòng bị báo lỗi', '580'],
     ['gia_ban_du_kien', 'Không', 'Số, đơn vị nghìn đồng', 'Mặc định = gia_mua', '720'],
-    ['trang_thai', 'Không', 'in_stock hoặc sold', 'Nếu có ngay_ban / gia_ban_thuc_te → sold; nếu không → in_stock', 'in_stock'],
+    ['trang_thai', 'Không', 'in_stock, sold hoặc returned', 'Nếu có ngay_ban / gia_ban_thuc_te → sold; nếu không → in_stock', 'in_stock'],
     ['ngay_nhap', 'Không', 'YYYY-MM-DD hoặc DD/MM/YYYY', `Mặc định = ngày upload file (${getTodayIso(today)})`, getTodayIso(today)],
     ['gia_ban_thuc_te', 'Không', 'Số, đơn vị nghìn đồng; chỉ dùng khi sold', 'Nếu là sold và để trống → mặc định = gia_ban_du_kien; nếu ô đó cũng trống → = gia_mua', '430'],
     ['ngay_ban', 'Không', 'YYYY-MM-DD hoặc DD/MM/YYYY; dùng khi sold', `Nếu là sold và để trống → mặc định = ngày upload file (${getTodayIso(today)})`, '2026-05-15'],
@@ -469,7 +470,7 @@ function ImportDataModal({ today, onClose, onImport }) {
                         <tr key={`${u.name}-${i}`}>
                           <td>{u.name}{u.variant ? ` · ${u.variant}` : ''}</td>
                           <td><CatPill cat={u.cat} /></td>
-                          <td>{u.status === 'sold' ? 'Đã bán' : 'Tồn kho'}</td>
+                          <td>{u.status === 'sold' ? 'Đã bán' : u.status === 'returned' ? 'Hàng hoàn' : 'Tồn kho'}</td>
                           <td className="num mono">{u.buy.toLocaleString('vi-VN')}</td>
                           <td className="mono">{new Date(u.arrived).toLocaleDateString('vi-VN')}</td>
                           <td className="mono">{u.sold ? new Date(u.sold).toLocaleDateString('vi-VN') : '—'}</td>

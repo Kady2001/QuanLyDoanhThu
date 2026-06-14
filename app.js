@@ -2,7 +2,8 @@
   const { useState: useStateA, useEffect: useEffectA, useRef: useRefA } = React;
   const APP_CONFIG = window.NEXUS_GEAR_CONFIG || {};
   const ALLOW_WEB_EDIT = APP_CONFIG.allowWebEdit === true;
-  const DEV_BYPASS_AUTH = true;
+  const LOGIN_ENABLED = APP_CONFIG.enableLogin === true;
+  const DEV_BYPASS_AUTH = !LOGIN_ENABLED;
   const DEV_SESSION = {
     user: { username: "dev", role: "admin", name: "Dev mode" },
     loginTime: Date.now(),
@@ -672,7 +673,8 @@
     }, []);
     const handleLogin = (newSession) => {
       setSession(newSession);
-      setTab("dashboard");
+      const role = newSession.user.role;
+      setTab(window.hasPermission(role, "dashboard") ? "dashboard" : "storefront");
     };
     const handleLogout = () => {
       if (DEV_BYPASS_AUTH) return;
@@ -687,7 +689,8 @@
       }
       return window.hasPermission(session.user.role, tabName);
     };
-    const canEditSharedData = ALLOW_WEB_EDIT && syncMode === "shared" && editLock.owned;
+    const canEditRole = DEV_BYPASS_AUTH || window.canEditData?.(session?.user?.role);
+    const canEditSharedData = canEditRole && ALLOW_WEB_EDIT && syncMode === "shared" && editLock.owned;
     const ensureCanEdit = () => {
       if (canEditSharedData) {
         markUserDataChanged();
@@ -1127,7 +1130,7 @@
         onRestore: restoreSnapshot,
         onDelete: deleteSnapshots
       }
-    ), ALLOW_WEB_EDIT && syncMode === "shared" && (canEditSharedData ? /* @__PURE__ */ React.createElement("button", { className: "ctl ghost", onClick: () => releaseEditLock() }, "TR\u1EA2 QUY\u1EC0N S\u1EECA") : /* @__PURE__ */ React.createElement("button", { className: "ctl ghost", onClick: () => acquireEditLock() }, "NH\u1EACN QUY\u1EC0N S\u1EECA")), /* @__PURE__ */ React.createElement("div", { className: "user-chip", title: `${session.user.name}` }, session.user.username.substring(0, 2).toUpperCase()), !DEV_BYPASS_AUTH && /* @__PURE__ */ React.createElement(
+    ), canEditRole && ALLOW_WEB_EDIT && syncMode === "shared" && (canEditSharedData ? /* @__PURE__ */ React.createElement("button", { className: "ctl ghost", onClick: () => releaseEditLock() }, "TR\u1EA2 QUY\u1EC0N S\u1EECA") : /* @__PURE__ */ React.createElement("button", { className: "ctl ghost", onClick: () => acquireEditLock() }, "NH\u1EACN QUY\u1EC0N S\u1EECA")), /* @__PURE__ */ React.createElement("div", { className: "user-chip", title: `${session.user.name}` }, session.user.username.substring(0, 2).toUpperCase()), !DEV_BYPASS_AUTH && /* @__PURE__ */ React.createElement(
       "button",
       {
         className: "ctl ghost",

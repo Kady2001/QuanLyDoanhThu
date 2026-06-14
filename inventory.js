@@ -1,5 +1,5 @@
 (() => {
-  const { useState: useStateI, useMemo: useMemoI } = React;
+  const { useState: useStateI, useMemo: useMemoI, useEffect: useEffectI, useRef: useRefI } = React;
   function formatLocalDateInput(date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
   }
@@ -7,6 +7,43 @@
     const date = new Date(now);
     if (date.getHours() < 6) date.setDate(date.getDate() - 1);
     return formatLocalDateInput(date);
+  }
+  function InventoryNoteInput({ value, placeholder, disabled, onCommit }) {
+    const [draft, setDraft] = useStateI(value || "");
+    const committedRef = useRefI(value || "");
+    const timerRef = useRefI(null);
+    const mountedRef = useRefI(false);
+    useEffectI(() => {
+      const next = value || "";
+      committedRef.current = next;
+      setDraft(next);
+    }, [value]);
+    const flush = () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = null;
+      if (disabled || draft === committedRef.current) return;
+      committedRef.current = draft;
+      onCommit(draft);
+    };
+    useEffectI(() => {
+      if (!mountedRef.current) {
+        mountedRef.current = true;
+        return void 0;
+      }
+      if (disabled || draft === committedRef.current) return void 0;
+      timerRef.current = setTimeout(flush, 350);
+      return () => {
+        if (timerRef.current) clearTimeout(timerRef.current);
+      };
+    }, [draft, disabled]);
+    return /* @__PURE__ */ React.createElement("textarea", {
+      className: "note-input",
+      value: draft,
+      placeholder,
+      onChange: (e) => setDraft(e.target.value),
+      onBlur: flush,
+      disabled
+    });
   }
   function Inventory({
     units,
@@ -204,16 +241,7 @@
           onChange: () => toggleUnitSelection(p.id),
           title: "Ch\u1ECDn \u0111\u1EC3 b\xE1n theo l\xF4"
         }
-      )), /* @__PURE__ */ React.createElement("td", { className: "mono txn-code" }, p.transactionCode), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { className: "product-cell" }, /* @__PURE__ */ React.createElement(ProductThumb, { cat: p.cat, size: 38 }), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "name" }, p.name), p.variant && /* @__PURE__ */ React.createElement("span", { className: "variant" }, p.variant)))), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(CatPill, { cat: p.cat })), /* @__PURE__ */ React.createElement("td", { className: `num mono ${isReturned ? "returned-money" : ""}` }, p.buy.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: `num mono ${isReturned ? "returned-money" : ""}`, style: { fontWeight: 700, color: isReturned ? void 0 : "#7c3aed" } }, (p.expectedSell || 0).toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { fontSize: 12, color: "#6b6b80" } }, new Date(p.arrived).toLocaleDateString("vi-VN")), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("span", { className: `status-tag ${isReturned ? "status-returned" : isAged ? "status-low" : "status-ok"}` }, /* @__PURE__ */ React.createElement("span", { className: "d" }), isReturned ? "H\xC0NG HO\xC0N" : `${days}N`)), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(
-        "textarea",
-        {
-          className: "note-input",
-          value: p.note || "",
-          placeholder: "ghi ch\xFA...",
-          onChange: (e) => updateNote(p.id, e.target.value),
-          disabled: readOnly
-        }
-      )), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { className: "row-actions" }, /* @__PURE__ */ React.createElement("button", { className: "ctl ghost sm", onClick: () => setEditingUnit(p), disabled: readOnly }, "S\u1EECA"), isReturned ? /* @__PURE__ */ React.createElement("button", { className: "ctl primary sm", onClick: () => restoreReturned(p), disabled: readOnly }, "H\u1EE6Y HO\xC0N") : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("button", { className: "ctl ghost sm", onClick: () => markReturned(p), disabled: readOnly }, "H\xC0NG HO\xC0N"), /* @__PURE__ */ React.createElement("button", { className: "ctl primary sm", onClick: () => setSellingUnit(p), disabled: readOnly }, "B\xC1N \u2192")), /* @__PURE__ */ React.createElement("button", { className: "ctl ghost sm", disabled: readOnly, onClick: () => {
+      )), /* @__PURE__ */ React.createElement("td", { className: "mono txn-code" }, p.transactionCode), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { className: "product-cell" }, /* @__PURE__ */ React.createElement(ProductThumb, { cat: p.cat, size: 38 }), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "name" }, p.name), p.variant && /* @__PURE__ */ React.createElement("span", { className: "variant" }, p.variant)))), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(CatPill, { cat: p.cat })), /* @__PURE__ */ React.createElement("td", { className: `num mono ${isReturned ? "returned-money" : ""}` }, p.buy.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: `num mono ${isReturned ? "returned-money" : ""}`, style: { fontWeight: 700, color: isReturned ? void 0 : "#7c3aed" } }, (p.expectedSell || 0).toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { fontSize: 12, color: "#6b6b80" } }, new Date(p.arrived).toLocaleDateString("vi-VN")), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("span", { className: `status-tag ${isReturned ? "status-returned" : isAged ? "status-low" : "status-ok"}` }, /* @__PURE__ */ React.createElement("span", { className: "d" }), isReturned ? "H\xC0NG HO\xC0N" : `${days}N`)), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(InventoryNoteInput, { value: p.note || "", placeholder: "ghi ch\xFA...", onCommit: (value) => updateNote(p.id, value), disabled: readOnly })), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { className: "row-actions" }, /* @__PURE__ */ React.createElement("button", { className: "ctl ghost sm", onClick: () => setEditingUnit(p), disabled: readOnly }, "S\u1EECA"), isReturned ? /* @__PURE__ */ React.createElement("button", { className: "ctl primary sm", onClick: () => restoreReturned(p), disabled: readOnly }, "H\u1EE6Y HO\xC0N") : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("button", { className: "ctl ghost sm", onClick: () => markReturned(p), disabled: readOnly }, "H\xC0NG HO\xC0N"), /* @__PURE__ */ React.createElement("button", { className: "ctl primary sm", onClick: () => setSellingUnit(p), disabled: readOnly }, "B\xC1N \u2192")), /* @__PURE__ */ React.createElement("button", { className: "ctl ghost sm", disabled: readOnly, onClick: () => {
         if (confirm(`Xo\xE1 "${p.name}${p.variant ? " \xB7 " + p.variant : ""}" kh\u1ECFi kho?`)) removeUnit(p.id);
       }, title: "Xo\xE1 kh\u1ECFi kho" }, "\u{1F5D1}"))));
     }), filtered.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "10", className: "empty" }, "Kh\xF4ng t\xECm th\u1EA5y s\u1EA3n ph\u1EA9m ph\xF9 h\u1EE3p"))), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "4" }, "T\u1ED4NG \u0110ANG T\xCDNH (", filteredActive.length, " m\xF3n)"), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, filteredActive.reduce((s, p) => s + p.buy, 0).toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "num mono profit-pos" }, filteredActive.reduce((s, p) => s + (p.expectedSell || 0), 0).toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { colSpan: "4" })))))), /* @__PURE__ */ React.createElement("div", { className: "card stock-composition-card" }, /* @__PURE__ */ React.createElement("div", { className: "card-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "card-title" }, "C\u01A1 c\u1EA5u kho"), /* @__PURE__ */ React.createElement("div", { className: "card-sub" }, "B\u1EA5m v\xE0o danh m\u1EE5c \u0111\u1EC3 xem chi ti\u1EBFt theo d\xF2ng s\u1EA3n ph\u1EA9m"))), /* @__PURE__ */ React.createElement("div", { className: "card-body stock-composition-body" }, /* @__PURE__ */ React.createElement("div", { className: "stock-composition-section" }, /* @__PURE__ */ React.createElement("div", { className: "stock-composition-head" }, /* @__PURE__ */ React.createElement("strong", null, "Theo s\u1ED1 l\u01B0\u1EE3ng"), /* @__PURE__ */ React.createElement("span", null, "M\u1ED7i l\xE1t = % s\u1ED1 m\xF3n")), /* @__PURE__ */ React.createElement("div", { className: "stock-composition-visual" }, /* @__PURE__ */ React.createElement(

@@ -1,5 +1,5 @@
 (() => {
-  const { useState: useStateD, useMemo: useMemoD } = React;
+  const { useState: useStateD, useMemo: useMemoD, useEffect: useEffectD, useRef: useRefD } = React;
   const MONTH_NAMES = ["Th\xE1ng 1", "Th\xE1ng 2", "Th\xE1ng 3", "Th\xE1ng 4", "Th\xE1ng 5", "Th\xE1ng 6", "Th\xE1ng 7", "Th\xE1ng 8", "Th\xE1ng 9", "Th\xE1ng 10", "Th\xE1ng 11", "Th\xE1ng 12"];
   function CatPill({ cat }) {
     const c = window.CATEGORIES.find((x) => x.id === cat);
@@ -10,6 +10,43 @@
     const cls = pct >= 110 ? "" : pct >= 100 ? "flat" : "neg";
     const color = pct >= 110 ? "#10b981" : pct >= 100 ? "#9a9aae" : "#e11d48";
     return /* @__PURE__ */ React.createElement("span", { className: "rate-bar" }, /* @__PURE__ */ React.createElement("span", { className: "bar" }, /* @__PURE__ */ React.createElement("i", { className: cls, style: { width: `${w}%` } })), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 12, fontWeight: 800, color, minWidth: 56, textAlign: "right" } }, pct.toFixed(1), "%"));
+  }
+  function DashboardNoteInput({ value, placeholder, disabled, onCommit }) {
+    const [draft, setDraft] = useStateD(value || "");
+    const committedRef = useRefD(value || "");
+    const timerRef = useRefD(null);
+    const mountedRef = useRefD(false);
+    useEffectD(() => {
+      const next = value || "";
+      committedRef.current = next;
+      setDraft(next);
+    }, [value]);
+    const flush = () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = null;
+      if (disabled || draft === committedRef.current) return;
+      committedRef.current = draft;
+      onCommit(draft);
+    };
+    useEffectD(() => {
+      if (!mountedRef.current) {
+        mountedRef.current = true;
+        return void 0;
+      }
+      if (disabled || draft === committedRef.current) return void 0;
+      timerRef.current = setTimeout(flush, 350);
+      return () => {
+        if (timerRef.current) clearTimeout(timerRef.current);
+      };
+    }, [draft, disabled]);
+    return /* @__PURE__ */ React.createElement("textarea", {
+      className: "note-input",
+      value: draft,
+      placeholder,
+      onChange: (e) => setDraft(e.target.value),
+      onBlur: flush,
+      disabled
+    });
   }
   function dashDateOnly(value) {
     const d = value instanceof Date ? new Date(value) : new Date(value);
@@ -357,16 +394,7 @@
       const ratio = s.sell / s.buy * 100;
       const showRatio = s.cat !== "accessory";
       const isLoss = profit < 0;
-      return /* @__PURE__ */ React.createElement("tr", { key: s.id }, /* @__PURE__ */ React.createElement("td", { className: "mono txn-code" }, s.transactionCode), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { style: { minWidth: 200 } }, /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 700 } }, s.name), s.variant && /* @__PURE__ */ React.createElement("span", { className: "variant" }, s.variant))), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(CatPill, { cat: s.cat })), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, s.buy.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "num mono", style: { fontWeight: 700 } }, s.sell.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { color: "#6b6b80", fontSize: 12 } }, new Date(s.arrived).toLocaleDateString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { fontSize: 12, fontWeight: 600 } }, new Date(s.sold).toLocaleDateString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: `num mono ${isLoss ? "profit-neg" : profit > 0 ? "profit-pos" : "profit-zero"}` }, isLoss ? "\u2212" : profit > 0 ? "+" : "", Math.abs(profit).toLocaleString("vi-VN"), isLoss && /* @__PURE__ */ React.createElement("span", { className: "loss-tag" }, "L\u1ED6")), /* @__PURE__ */ React.createElement("td", { className: "ratio-col" }, showRatio ? /* @__PURE__ */ React.createElement(RateBar, { pct: ratio }) : /* @__PURE__ */ React.createElement("span", { className: "muted" }, "\u2014")), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(
-        "textarea",
-        {
-          className: "note-input",
-          value: s.note || "",
-          placeholder: "th\xEAm ghi ch\xFA...",
-          onChange: (e) => updateNote(s.id, e.target.value),
-          disabled: readOnly
-        }
-      )), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { className: "row-actions" }, /* @__PURE__ */ React.createElement("button", { className: "ctl ghost sm", onClick: () => setEditingUnit(s), disabled: readOnly }, "S\u1EECA"), /* @__PURE__ */ React.createElement("button", { className: "ctl danger sm", onClick: () => setConfirmCancel(s), title: "Hu\u1EF7 giao d\u1ECBch, tr\u1EA3 v\u1EC1 kho", disabled: readOnly }, "\u21BA HU\u1EF6"))));
+      return /* @__PURE__ */ React.createElement("tr", { key: s.id }, /* @__PURE__ */ React.createElement("td", { className: "mono txn-code" }, s.transactionCode), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { style: { minWidth: 200 } }, /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 700 } }, s.name), s.variant && /* @__PURE__ */ React.createElement("span", { className: "variant" }, s.variant))), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(CatPill, { cat: s.cat })), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, s.buy.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "num mono", style: { fontWeight: 700 } }, s.sell.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { color: "#6b6b80", fontSize: 12 } }, new Date(s.arrived).toLocaleDateString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { fontSize: 12, fontWeight: 600 } }, new Date(s.sold).toLocaleDateString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: `num mono ${isLoss ? "profit-neg" : profit > 0 ? "profit-pos" : "profit-zero"}` }, isLoss ? "\u2212" : profit > 0 ? "+" : "", Math.abs(profit).toLocaleString("vi-VN"), isLoss && /* @__PURE__ */ React.createElement("span", { className: "loss-tag" }, "L\u1ED6")), /* @__PURE__ */ React.createElement("td", { className: "ratio-col" }, showRatio ? /* @__PURE__ */ React.createElement(RateBar, { pct: ratio }) : /* @__PURE__ */ React.createElement("span", { className: "muted" }, "\u2014")), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement(DashboardNoteInput, { value: s.note || "", placeholder: "th\xEAm ghi ch\xFA...", onCommit: (value) => updateNote(s.id, value), disabled: readOnly })), /* @__PURE__ */ React.createElement("td", null, /* @__PURE__ */ React.createElement("div", { className: "row-actions" }, /* @__PURE__ */ React.createElement("button", { className: "ctl ghost sm", onClick: () => setEditingUnit(s), disabled: readOnly }, "S\u1EECA"), /* @__PURE__ */ React.createElement("button", { className: "ctl danger sm", onClick: () => setConfirmCancel(s), title: "Hu\u1EF7 giao d\u1ECBch, tr\u1EA3 v\u1EC1 kho", disabled: readOnly }, "\u21BA HU\u1EF6"))));
     }), filtered.length === 0 && /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "11", className: "empty" }, "Kh\xF4ng c\xF3 giao d\u1ECBch trong k\u1EF3 \u0111ang xem"))), /* @__PURE__ */ React.createElement("tfoot", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: "3" }, "T\u1ED4NG (", filtered.length, " \u0111\u01A1n)"), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, totalBuy.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "num mono" }, totalRev.toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { colSpan: "2" }), /* @__PURE__ */ React.createElement("td", { className: `num mono ${salesProfit >= 0 ? "profit-pos" : "profit-neg"}` }, salesProfit < 0 ? "\u2212" : "+", Math.abs(salesProfit).toLocaleString("vi-VN")), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { color: salesProfit >= 0 ? "#10b981" : "#e11d48", fontWeight: 800 } }, catFilter === "accessory" ? "\u2014" : `${salesAvgRatio.toFixed(1)}%`), /* @__PURE__ */ React.createElement("td", { colSpan: "2" })))))), confirmCancel && /* @__PURE__ */ React.createElement(
       ConfirmCancelModal,
       {

@@ -1,6 +1,6 @@
 // Inventory — list of individual in-stock units
 
-const { useState: useStateI, useMemo: useMemoI } = React;
+const { useState: useStateI, useMemo: useMemoI, useEffect: useEffectI, useRef: useRefI } = React;
 
 function formatLocalDateInput(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -10,6 +10,50 @@ function defaultArrivalDate(now = new Date()) {
   const date = new Date(now);
   if (date.getHours() < 6) date.setDate(date.getDate() - 1);
   return formatLocalDateInput(date);
+}
+
+function InventoryNoteInput({ value, placeholder, disabled, onCommit }) {
+  const [draft, setDraft] = useStateI(value || '');
+  const committedRef = useRefI(value || '');
+  const timerRef = useRefI(null);
+  const mountedRef = useRefI(false);
+
+  useEffectI(() => {
+    const next = value || '';
+    committedRef.current = next;
+    setDraft(next);
+  }, [value]);
+
+  const flush = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = null;
+    if (disabled || draft === committedRef.current) return;
+    committedRef.current = draft;
+    onCommit(draft);
+  };
+
+  useEffectI(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return undefined;
+    }
+    if (disabled || draft === committedRef.current) return undefined;
+    timerRef.current = setTimeout(flush, 350);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [draft, disabled]);
+
+  return (
+    <textarea
+      className="note-input"
+      value={draft}
+      placeholder={placeholder}
+      onChange={e => setDraft(e.target.value)}
+      onBlur={flush}
+      disabled={disabled}
+    />
+  );
 }
 
 function Inventory({
@@ -362,11 +406,10 @@ function Inventory({
                         </span>
                       </td>
                       <td>
-                        <textarea
-                          className="note-input"
+                        <InventoryNoteInput
                           value={p.note || ''}
-                          placeholder="ghi chú..."
-                          onChange={e => updateNote(p.id, e.target.value)}
+                          placeholder={'ghi ch\u00fa...'}
+                          onCommit={value => updateNote(p.id, value)}
                           disabled={readOnly}
                         />
                       </td>

@@ -1,6 +1,6 @@
 // Dashboard — list of sold units, charts, KPIs
 
-const { useState: useStateD, useMemo: useMemoD } = React;
+const { useState: useStateD, useMemo: useMemoD, useEffect: useEffectD, useRef: useRefD } = React;
 
 const MONTH_NAMES = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
 
@@ -25,6 +25,50 @@ function RateBar({ pct }) {
         {pct.toFixed(1)}%
       </span>
     </span>
+  );
+}
+
+function DashboardNoteInput({ value, placeholder, disabled, onCommit }) {
+  const [draft, setDraft] = useStateD(value || '');
+  const committedRef = useRefD(value || '');
+  const timerRef = useRefD(null);
+  const mountedRef = useRefD(false);
+
+  useEffectD(() => {
+    const next = value || '';
+    committedRef.current = next;
+    setDraft(next);
+  }, [value]);
+
+  const flush = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = null;
+    if (disabled || draft === committedRef.current) return;
+    committedRef.current = draft;
+    onCommit(draft);
+  };
+
+  useEffectD(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return undefined;
+    }
+    if (disabled || draft === committedRef.current) return undefined;
+    timerRef.current = setTimeout(flush, 350);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [draft, disabled]);
+
+  return (
+    <textarea
+      className="note-input"
+      value={draft}
+      placeholder={placeholder}
+      onChange={e => setDraft(e.target.value)}
+      onBlur={flush}
+      disabled={disabled}
+    />
   );
 }
 
@@ -675,11 +719,10 @@ function Dashboard({
                       </td>
                       <td className="ratio-col">{showRatio ? <RateBar pct={ratio} /> : <span className="muted">—</span>}</td>
                       <td>
-                        <textarea
-                          className="note-input"
+                        <DashboardNoteInput
                           value={s.note || ''}
-                          placeholder="thêm ghi chú..."
-                          onChange={e => updateNote(s.id, e.target.value)}
+                          placeholder={'th\u00eam ghi ch\u00fa...'}
+                          onCommit={value => updateNote(s.id, value)}
                           disabled={readOnly}
                         />
                       </td>

@@ -1,15 +1,14 @@
-// Authentication — login screen, session management, permissions
+// Authentication - login screen, session management, permissions
 
-const { useState: useStateAuth, useEffect: useEffectAuth } = React;
+const { useState: useStateAuth } = React;
 
-// Demo accounts (no real auth yet — just for demo)
 const DEMO_ACCOUNTS = [
-  { username: 'admin', password: 'admin123', role: 'admin', name: 'Quản trị viên' },
-  { username: 'staff', password: 'staff123', role: 'staff', name: 'Nhân viên' },
+  { username: 'admin', password: 'admin123', role: 'admin', name: 'Qu\u1ea3n tr\u1ecb vi\u00ean' },
+  { username: 'viewer', password: 'viewer123', role: 'viewer', name: 'T\u00e0i kho\u1ea3n xem to\u00e0n b\u1ed9' },
+  { username: 'store', password: 'store123', role: 'storefront', name: 'T\u00e0i kho\u1ea3n c\u1eeda h\u00e0ng' },
 ];
 
-// Session duration: 30 minutes
-const SESSION_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
+const SESSION_DURATION = 30 * 60 * 1000;
 
 function LoginScreen({ onLogin }) {
   const [username, setUsername] = useStateAuth('');
@@ -22,12 +21,11 @@ function LoginScreen({ onLogin }) {
     setError('');
     setLoading(true);
 
-    // Simulate auth delay
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-    const account = DEMO_ACCOUNTS.find(a => a.username === username && a.password === password);
+    const account = DEMO_ACCOUNTS.find(item => item.username === username && item.password === password);
     if (account) {
-      const session = {
+      onLogin({
         user: {
           username: account.username,
           role: account.role,
@@ -35,12 +33,11 @@ function LoginScreen({ onLogin }) {
         },
         loginTime: Date.now(),
         expiresAt: Date.now() + SESSION_DURATION,
-      };
-      onLogin(session);
+      });
       setUsername('');
       setPassword('');
     } else {
-      setError('Tên đăng nhập hoặc mật khẩu không đúng');
+      setError('T\u00ean \u0111\u0103ng nh\u1eadp ho\u1eb7c m\u1eadt kh\u1ea9u kh\u00f4ng \u0111\u00fang');
     }
     setLoading(false);
   };
@@ -79,7 +76,7 @@ function LoginScreen({ onLogin }) {
             N
           </div>
           <h1 style={{ fontSize: 20, fontWeight: 600, margin: '0 0 8px' }}>NEXUS GEAR</h1>
-          <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>Quản lý bán hàng</p>
+          <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0 }}>{'Qu\u1ea3n l\u00fd b\u00e1n h\u00e0ng'}</p>
         </div>
 
         <form onSubmit={handleLogin}>
@@ -91,13 +88,13 @@ function LoginScreen({ onLogin }) {
               marginBottom: 8,
               color: 'var(--text)',
             }}>
-              Tên đăng nhập
+              {'T\u00ean \u0111\u0103ng nh\u1eadp'}
             </label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="admin hoặc staff"
+              placeholder="admin, viewer hoac store"
               style={{
                 width: '100%',
                 padding: '10px 12px',
@@ -119,13 +116,13 @@ function LoginScreen({ onLogin }) {
               marginBottom: 8,
               color: 'var(--text)',
             }}>
-              Mật khẩu
+              {'M\u1eadt kh\u1ea9u'}
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Nhập mật khẩu"
+              placeholder="Nhap mat khau"
               style={{
                 width: '100%',
                 padding: '10px 12px',
@@ -169,7 +166,7 @@ function LoginScreen({ onLogin }) {
               opacity: loading || !username || !password ? 0.6 : 1,
             }}
           >
-            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+            {loading ? '\u0110ang \u0111\u0103ng nh\u1eadp...' : '\u0110\u0103ng nh\u1eadp'}
           </button>
         </form>
 
@@ -183,7 +180,8 @@ function LoginScreen({ onLogin }) {
           <div style={{ fontWeight: 600, marginBottom: 8, color: 'var(--text)' }}>Demo accounts:</div>
           <div style={{ color: 'var(--muted)', lineHeight: 1.6 }}>
             <div><strong>Admin:</strong> admin / admin123</div>
-            <div><strong>Staff:</strong> staff / staff123</div>
+            <div><strong>Viewer:</strong> viewer / viewer123</div>
+            <div><strong>Store:</strong> store / store123</div>
           </div>
         </div>
       </div>
@@ -191,23 +189,26 @@ function LoginScreen({ onLogin }) {
   );
 }
 
-// Check if session is still valid
 function isSessionValid(session) {
   if (!session) return false;
   return Date.now() < session.expiresAt;
 }
 
-// Check if user can access a page
 function hasPermission(userRole, page) {
   const permissions = {
-    dashboard: ['admin'],
-    inventory: ['admin'],
-    catalog: ['admin'],
-    storefront: ['admin', 'staff'], // Everyone can access storefront
+    dashboard: ['admin', 'viewer'],
+    inventory: ['admin', 'viewer'],
+    catalog: ['admin', 'viewer'],
+    storefront: ['admin', 'viewer', 'storefront'],
   };
   return permissions[page]?.includes(userRole);
 }
 
+function canEditData(userRole) {
+  return userRole === 'admin';
+}
+
 window.isSessionValid = isSessionValid;
 window.hasPermission = hasPermission;
+window.canEditData = canEditData;
 window.LoginScreen = LoginScreen;
